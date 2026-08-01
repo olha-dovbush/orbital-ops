@@ -52,3 +52,8 @@ Never edit `vite.config.ts`, `eslint.config.js`, `tsconfig*.json`,
 `.jscpd.json`, `scripts/validate.ts`, `RUBRIC.md`, or `ASSIGNMENT.md`. They are
 the grading contract — fix `src/`, not the config. `public/api/**` is read-only,
 with one exception: creating `public/api/fuel.json` for Exercise 4.
+
+## Plan Mode
+
+- Make the plan extremely concise. Sacrifice grammar for the sake of concision.
+- At the end of each plan, give me a list of unresolved questions to answer, if any.
