@@ -1,0 +1,13 @@
+{
+  "updated": "2036-07-11T09:00:00Z",
+  "items": [
+    { "id": "INC-2107", "severity": "critical", "system": "life-support", "title": "CO2 scrubber cartridge 3 efficiency below 80%", "timestamp": "2036-07-11T07:42:00Z", "resolved": false, "assignee": "eng-05" },
+    { "id": "INC-2106", "severity": "warning", "system": "power", "title": "Solar array B tracking lag during eclipse exit", "timestamp": "2036-07-11T05:15:00Z", "resolved": false, "assignee": "flt-02" },
+    { "id": "INC-2105", "severity": "info", "system": "comms", "title": "Ku-band handover delay 4.2s (nominal < 2s)", "timestamp": "2036-07-10T22:03:00Z", "resolved": true, "assignee": "cdr-01" },
+    { "id": "INC-2104", "severity": "warning", "system": "thermal", "title": "Radiator loop A pump vibration trending up", "timestamp": "2036-07-10T18:47:00Z", "resolved": false, "assignee": "eng-05" },
+    { "id": "INC-2103", "severity": "info", "system": "payload", "title": "Crystal growth experiment batch 12 complete", "timestamp": "2036-07-10T14:20:00Z", "resolved": true, "assignee": "bot-06" },
+    { "id": "INC-2102", "severity": "critical", "system": "hull", "title": "MMOD strike detected on node 2 shielding, no breach", "timestamp": "2036-07-09T11:58:00Z", "resolved": true, "assignee": "cdr-01" },
+    { "id": "INC-2101", "severity": "info", "system": "crew", "title": "Quarterly medical checks completed for beta shift", "timestamp": "2036-07-09T09:30:00Z", "resolved": true, "assignee": "med-04" },
+    { "id": "INC-2100", "severity": "warning", "system": "life-support", "title": "Water reclamation yield 91% (target 93%)", "timestamp": "2036-07-08T16:12:00Z", "resolved": false, "assignee": "med-04" }
+  ]
+}

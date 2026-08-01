@@ -1,0 +1,11 @@
+{
+  "updated": "2036-07-11T09:00:00Z",
+  "members": [
+    { "id": "cdr-01", "name": "Yuki Tanaka", "role": "Commander", "shift": "alpha", "onDuty": true, "heartRate": 64, "sleepHours": 7.2, "missionDay": 148 },
+    { "id": "flt-02", "name": "Marcus Webb", "role": "Flight Engineer", "shift": "alpha", "onDuty": true, "heartRate": 71, "sleepHours": 6.8, "missionDay": 148 },
+    { "id": "sci-03", "name": "Elena Petrova", "role": "Science Officer", "shift": "beta", "onDuty": false, "heartRate": 58, "sleepHours": 8.1, "missionDay": 92 },
+    { "id": "med-04", "name": "Amara Okafor", "role": "Medical Officer", "shift": "beta", "onDuty": false, "heartRate": 61, "sleepHours": 7.9, "missionDay": 92 },
+    { "id": "eng-05", "name": "Lars Eriksen", "role": "Systems Engineer", "shift": "gamma", "onDuty": true, "heartRate": 77, "sleepHours": 5.4, "missionDay": 233 },
+    { "id": "bot-06", "name": "Priya Sharma", "role": "Payload Specialist", "shift": "gamma", "onDuty": false, "heartRate": 66, "sleepHours": 7.5, "missionDay": 233 }
+  ]
+}

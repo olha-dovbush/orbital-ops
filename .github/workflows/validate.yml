@@ -1,0 +1,92 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  guard:
+    name: Locked files unchanged
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check locked files
+        run: |
+          LOCKED='^(RUBRIC\.md|\.github/|eslint\.config\.js|tsconfig\.strict\.json|\.jscpd\.json|vite\.config\.ts|scripts/validate\.ts|public/api/)'
+          CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep -E "$LOCKED" | grep -v '^public/api/fuel\.json$' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "::error::Locked files modified in this PR:"
+            echo "$CHANGED"
+            echo "The validation contract is part of the assignment. Fix the code, not the checks." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "No locked files touched. ✅"
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: TypeScript (strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Tests + coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
+
+  duplication:
+    name: Copy-paste detector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dupcheck
+
+  structure:
+    name: Assignment structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Structural checks
+        run: |
+          npm run validate:structure || {
+            echo "Structural checks failing — expected until ASSIGNMENT.md is complete." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }

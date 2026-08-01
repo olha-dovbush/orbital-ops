@@ -1,0 +1,12 @@
+{
+  "id": "kruger-60",
+  "name": "ISS Kruger-60",
+  "orbit": "LEO 412 km",
+  "inclinationDeg": 51.6,
+  "velocityKms": 7.66,
+  "crewCapacity": 8,
+  "crewOnboard": 6,
+  "commissioned": "2031-04-12",
+  "nextResupply": "2036-08-02T14:30:00Z",
+  "daysInService": 1916
+}

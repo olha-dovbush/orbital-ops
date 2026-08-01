@@ -1,0 +1,9 @@
+# The grading contract. Changes here need instructor eyes.
+RUBRIC.md @amdmax
+/.github/ @amdmax
+eslint.config.js @amdmax
+tsconfig.strict.json @amdmax
+.jscpd.json @amdmax
+vite.config.ts @amdmax
+/scripts/validate.ts @amdmax
+/public/api/ @amdmax
