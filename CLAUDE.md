@@ -21,11 +21,45 @@ the provider, mount it in `src/App.tsx`, not `src/main.tsx`:
 Pure logic goes in `src/domain/` with colocated tests — panels are expensive to
 test and the coverage gate is cheapest to satisfy there.
 
+Domain vocabulary lives in `CONTEXT.md`; decisions that the source cannot settle
+on its own live in `docs/decisions/`. Read both before renaming a concept.
+
 ## Conventions
 
 Never suppress a lint rule. The caps in `eslint.config.js` are the grading
 contract; restructure the code to fit them. Do not add
 `@tanstack/eslint-plugin-query` — that config file is locked.
+
+Where things go:
+
+- `src/api/` — models and one generic `getData`. Every payload is registered in
+  `ApiResources`, so a path can only return its own type. No `any`, ever.
+- `src/hooks/` — one thin `useQuery` wrapper per resource. Only Live Resources
+  poll; Reference Data fetches once. Nothing else fetches.
+- `src/domain/` — pure functions, colocated `*.test.ts`. No React, no `Date.now()`
+  — an instant is always an argument.
+- `src/config.ts` — every threshold, interval, and domain→token mapping. A number
+  that means something belongs here, not at its call site.
+- `src/components/` — flat. Queries only in the four section containers
+  (`Dashboard` and the three panels); everything below takes typed props.
+- `tests/` — rendering tests. They stub `global.fetch`, never `src/api/client`.
+
+## Deletion policy
+
+Delete without asking:
+
+- Code with no importers that no test covers — dead exports, dead files.
+- Commented-out code. Git remembers it.
+- A local copy of something that now exists in `src/domain/` or `src/config.ts`.
+- Imports, variables, and helpers that your own change just orphaned.
+
+Ask first:
+
+- Anything a `docs/decisions/` record says to keep, and anything that is the last
+  written record of a rule — replace it before removing it.
+- Anything under `public/api/**` or in the locked list below.
+- Behaviour a user can see, even if the code implementing it is ugly. Removing a
+  visible behaviour is a product decision, not a cleanup.
 
 ## Locked files
 
