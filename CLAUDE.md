@@ -57,3 +57,17 @@ with one exception: creating `public/api/fuel.json` for Exercise 4.
 
 - Make the plan extremely concise. Sacrifice grammar for the sake of concision.
 - At the end of each plan, give me a list of unresolved questions to answer, if any.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `olha-dovbush/orbital-ops`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label named after its role. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/decisions/` at the repo root. See `docs/agents/domain.md`.
