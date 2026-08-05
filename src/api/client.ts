@@ -15,7 +15,3 @@ export async function getData(path: string): Promise<any> {
   const data = await res.json();
   return data as any;
 }
-
-export function getDataOrNull(path: string): Promise<any> {
-  return getData(path).catch(() => null);
-}

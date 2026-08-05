@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getData } from '../api/client';
-import { flashAlert } from '../utils';
 
 // The main mission control view. Started small in 2034. It has... grown.
 // Header, summary tiles, alert banner, resupply countdown, shift board --
 // everything lives here because it was "just one more tile" every sprint.
-
-// poll interval -- TelemetryChart and the setInterval below have their own copies
-const POLL_INTERVAL = 5000;
 
 export default function Dashboard() {
   const [station, setStation] = useState<any>(null);
@@ -38,11 +34,6 @@ export default function Dashboard() {
         const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
         setLastSync(pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
         setLoading(false);
-        const o2Series = results[1].series.o2.points;
-        const latestO2 = o2Series[o2Series.length - 1];
-        if (latestO2 < 19.5) {
-          flashAlert();
-        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -216,17 +207,6 @@ export default function Dashboard() {
     const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
     return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + 'z';
   };
-
-  /*
-  // v1 polling implementation, kept for reference during the 2035 migration
-  // useEffect(() => {
-  //   const id = setInterval(() => {
-  //     fetch('/api/station.json').then((r) => r.json()).then(setStation);
-  //     fetch('/api/telemetry.json').then((r) => r.json()).then(setTelemetry);
-  //   }, 5000);
-  //   return () => clearInterval(id);
-  // }, []);
-  */
 
   return (
     <div className="dashboard">

@@ -27,7 +27,7 @@ decision is written down.
    labels a floor it does not enforce.
 3. **The rival lives only in unreachable code.** `computeStationStatus` has no
    importers — its sole reference is its own definition in `src/utils.ts`.
-   `OldDashboard.tsx` has no importers either and is slated for deletion.
+   `OldDashboard.tsx` had no importers either and has since been deleted.
    Handbook rev. C predates the 2035 migration.
 
 So the 19.0 / 19.8 pair is not a competing requirement; it is a fossil that was

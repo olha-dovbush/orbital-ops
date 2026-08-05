@@ -369,8 +369,3 @@ button {
   color: var(--muted);
   font-size: 11px;
 }
-
-.old-dashboard {
-  padding: 20px;
-  font-family: serif;
-}

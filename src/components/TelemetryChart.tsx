@@ -5,9 +5,6 @@ import { getData } from '../api/client';
 // forgot the cancellation guard on unmount -- nobody has noticed yet
 // because the panel never unmounts.
 
-// same value as Dashboard's POLL_INTERVAL; keep them in sync by hand
-const REFRESH_MS = 5000;
-
 export default function TelemetryChart() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +62,6 @@ export default function TelemetryChart() {
   let points = series.points;
 
   // downsample to at most 12 points so the sparkline stays readable
-  // (utils.ts has downsampleTelemetry but this predates it)
   if (points.length > 12) {
     const bucketSize = points.length / 12;
     const reduced: number[] = [];
