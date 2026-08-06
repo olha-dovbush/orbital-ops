@@ -1,79 +1,36 @@
-import { useEffect, useState } from 'react';
-import { getData } from '../api/client';
+import { useState } from 'react';
+import { useIncidents } from '../hooks/useIncidents';
+import { sortIncidents } from '../domain/incidents';
+import PanelNotice from './PanelNotice';
 import { formatTimestamp, severityColor } from '../utils';
 
-// Incident feed. Fetch logic copied from CrewPanel (which was copied from
-// Dashboard). This one silently swallows errors after the retries run out,
-// which ops has complained about twice.
+// Incident feed. The fetch, the retry budget, and the loading/error chrome all
+// belong to shared code now; what is left here is the feed itself.
+//
+// The empty list renders only for a feed that returned no incidents. An
+// unreachable feed renders the error panel instead — an operator has to be able
+// to tell a calm station from a dead one.
 
 export default function IncidentFeed() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+  const incidents = useIncidents();
   const [showResolved, setShowResolved] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError('');
-    getData('incidents')
-      .then((result) => {
-        if (cancelled) return;
-        setData(result);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        if (retryCount < 2) {
-          setTimeout(() => setRetryCount(retryCount + 1), 1500);
-        } else {
-          // swallow the error, just stop loading
-          setData({ items: [] });
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [retryCount]);
+  if (incidents.isPending) {
+    return <PanelNotice title="Incidents" kind="loading" message="Loading incident feed…" />;
+  }
 
-  if (loading) {
+  if (incidents.isError) {
     return (
-      <section className="panel">
-        <h2>Incidents</h2>
-        <div className="panel-loading">
-          <div className="spinner" />
-          <p>Loading incident feed…</p>
-        </div>
-      </section>
+      <PanelNotice
+        title="Incidents"
+        kind="error"
+        message={incidents.error.message}
+        onRetry={() => void incidents.refetch()}
+      />
     );
   }
 
-  if (error) {
-    return (
-      <section className="panel">
-        <h2>Incidents</h2>
-        <div className="panel-error">
-          <p>⚠ {error}</p>
-          <button onClick={() => setRetryCount(0)}>Retry</button>
-        </div>
-      </section>
-    );
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  const items = data.items.filter((i: any) => showResolved || !i.resolved);
-  const rank: Record<string, number> = { critical: 0, warning: 1, info: 2 };
-  items.sort((a: any, b: any) => {
-    const ra = rank[a.severity] !== undefined ? rank[a.severity] : 3;
-    const rb = rank[b.severity] !== undefined ? rank[b.severity] : 3;
-    if (ra !== rb) return ra - rb;
-    return a.timestamp < b.timestamp ? 1 : -1;
-  });
+  const items = sortIncidents(incidents.data.items.filter((i) => showResolved || !i.resolved));
 
   return (
     <section className="panel">
@@ -85,7 +42,7 @@ export default function IncidentFeed() {
         </label>
       </h2>
       <ul className="incident-list">
-        {items.map((inc: any) => (
+        {items.map((inc) => (
           <li key={inc.id} className={inc.resolved ? 'incident-row incident-resolved' : 'incident-row'}>
             <span className="incident-sev" style={{ background: severityColor(inc.severity) }}>
               {inc.severity}
