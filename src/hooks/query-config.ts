@@ -7,3 +7,6 @@ export const POLL_INTERVAL_MS = 5000;
 
 /** Attempts after the first failure, before a resource reports an error. */
 export const RETRY_COUNT = 3;
+
+/** Reference Data never goes stale: one reading serves the whole board open. */
+export const REFERENCE_STALE_TIME_MS = Infinity;
