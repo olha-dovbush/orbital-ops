@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getData } from '../api/client';
-import { POLL_INTERVAL_MS, RETRY_COUNT } from './query-config';
+import { POLL_INTERVAL_MS, RETRY_COUNT } from '../config';
 
 /**
  * Incidents are a Live Resource, so the feed re-reads on the shared poll

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getData } from '../api/client';
-import { REFERENCE_STALE_TIME_MS, RETRY_COUNT } from './query-config';
+import { REFERENCE_STALE_TIME_MS, RETRY_COUNT } from '../config';
 
 /**
  * The station record is Reference Data: read once when the board opens. Orbit,

@@ -2,7 +2,7 @@ import { test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import IncidentFeed from '../src/components/IncidentFeed';
-import { POLL_INTERVAL_MS } from '../src/hooks/query-config';
+import { POLL_INTERVAL_MS } from '../src/config';
 import type { IncidentsResponse } from '../src/api/types';
 
 // The Incident panel at the global.fetch seam. The claim that matters most here

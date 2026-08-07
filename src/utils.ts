@@ -17,10 +17,3 @@ export function formatTimestamp(iso: string) {
   const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
   return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC';
 }
-
-export function severityColor(severity: string) {
-  if (severity === 'critical') return '#ff4d4d';
-  if (severity === 'warning') return '#ffb020';
-  if (severity === 'info') return '#4da3ff';
-  return '#8892a6';
-}

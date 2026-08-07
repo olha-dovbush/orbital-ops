@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
 import PanelNotice from './PanelNotice';
-import { formatTimestamp, severityColor } from '../utils';
+import { SEVERITY_CLASS } from '../config';
+import { formatTimestamp } from '../utils';
 
 // Incident feed. The fetch, the retry budget, and the loading/error chrome all
 // belong to shared code now; what is left here is the feed itself.
@@ -44,7 +45,7 @@ export default function IncidentFeed() {
       <ul className="incident-list">
         {items.map((inc) => (
           <li key={inc.id} className={inc.resolved ? 'incident-row incident-resolved' : 'incident-row'}>
-            <span className="incident-sev" style={{ background: severityColor(inc.severity) }}>
+            <span className={'incident-sev ' + SEVERITY_CLASS[inc.severity]}>
               {inc.severity}
             </span>
             <div className="incident-main">

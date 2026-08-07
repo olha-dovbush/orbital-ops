@@ -29,7 +29,7 @@ export default function CrewPanel() {
       <ul className="crew-list">
         {sortRoster(crew.data.members).map((m) => (
           <li key={m.id} className={m.onDuty ? 'crew-row crew-on' : 'crew-row'}>
-            <span className="crew-dot" style={{ background: m.onDuty ? '#3ddc84' : '#8892a6' }} />
+            <span className={m.onDuty ? 'crew-dot crew-dot-on' : 'crew-dot'} />
             <div className="crew-main">
               <span className="crew-name">{m.name}</span>
               <span className="crew-role">{m.role} · shift {m.shift}</span>

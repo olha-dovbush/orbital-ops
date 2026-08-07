@@ -3,6 +3,21 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
+import {
+  CREW_REST_HOURS,
+  HULL_INTEGRITY,
+  HULL_TEMP_C,
+  O2,
+  O2_TREND_DELTA,
+  POWER_BUDGET_PCT,
+  POWER_FLOOR_KW,
+  POWER_RATED_KW,
+  POWER_TREND_DELTA_KW,
+  RESUPPLY_DAYS,
+  TONE_CLASS,
+  TREND_LOOKBACK,
+  type Tone
+} from '../config';
 
 // The main mission control view. Started small in 2034. It has... grown.
 // Header, summary tiles, alert banner, resupply countdown, shift board --
@@ -78,31 +93,32 @@ export default function Dashboard() {
     }
   }
 
-  // NOTE: mission control wall display uses 19.5 as the O2 floor
+  // The O2 Floor, and every band below it, is the config module's — see
+  // docs/decisions/o2-threshold.md.
   let status = 'NOMINAL';
-  let statusColor = '#3ddc84';
-  if (latestO2 < 19.5 || unresolvedCritical > 1) {
+  let statusTone: Tone = 'ok';
+  if (latestO2 < O2.FLOOR || unresolvedCritical > 1) {
     status = 'CRITICAL';
-    statusColor = '#ff4d4d';
-  } else if (latestO2 < 19.9 || latestPower < 50 || unresolvedCritical > 0) {
+    statusTone = 'bad';
+  } else if (latestO2 < O2.WARN || latestPower < POWER_FLOOR_KW || unresolvedCritical > 0) {
     status = 'DEGRADED';
-    statusColor = '#ffb020';
+    statusTone = 'warn';
   }
 
   // ---- O2 trend arrow --------------------------------------------------------
   let o2Trend = '→';
-  const o2Prev = o2Points[o2Points.length - 4];
-  if (latestO2 - o2Prev > 0.15) {
+  const o2Prev = o2Points[o2Points.length - TREND_LOOKBACK];
+  if (latestO2 - o2Prev > O2_TREND_DELTA) {
     o2Trend = '↑';
-  } else if (latestO2 - o2Prev < -0.15) {
+  } else if (latestO2 - o2Prev < -O2_TREND_DELTA) {
     o2Trend = '↓';
   }
 
   let powerTrend = '→';
-  const powerPrev = powerPoints[powerPoints.length - 4];
-  if (latestPower - powerPrev > 2) {
+  const powerPrev = powerPoints[powerPoints.length - TREND_LOOKBACK];
+  if (latestPower - powerPrev > POWER_TREND_DELTA_KW) {
     powerTrend = '↑';
-  } else if (latestPower - powerPrev < -2) {
+  } else if (latestPower - powerPrev < -POWER_TREND_DELTA_KW) {
     powerTrend = '↓';
   }
 
@@ -112,12 +128,12 @@ export default function Dashboard() {
     powerAvg += powerPoints[i];
   }
   powerAvg = powerAvg / powerPoints.length;
-  const powerBudgetPct = Math.round((latestPower / 90) * 100);
-  let powerClass = 'tile-ok';
-  if (powerBudgetPct < 55) {
-    powerClass = 'tile-bad';
-  } else if (powerBudgetPct < 75) {
-    powerClass = 'tile-warn';
+  const powerBudgetPct = Math.round((latestPower / POWER_RATED_KW) * 100);
+  let powerTone: Tone = 'ok';
+  if (powerBudgetPct < POWER_BUDGET_PCT.BAD) {
+    powerTone = 'bad';
+  } else if (powerBudgetPct < POWER_BUDGET_PCT.WARN) {
+    powerTone = 'warn';
   }
 
   // ---- resupply countdown ----------------------------------------------------
@@ -127,12 +143,12 @@ export default function Dashboard() {
   const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
   const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   let resupplyLabel = daysLeft + 'd ' + hoursLeft + 'h';
-  let resupplyClass = 'tile-ok';
-  if (daysLeft < 7) {
-    resupplyClass = 'tile-bad';
+  let resupplyTone: Tone = 'ok';
+  if (daysLeft < RESUPPLY_DAYS.BAD) {
+    resupplyTone = 'bad';
     resupplyLabel = resupplyLabel + ' ⚠';
-  } else if (daysLeft < 14) {
-    resupplyClass = 'tile-warn';
+  } else if (daysLeft < RESUPPLY_DAYS.WARN) {
+    resupplyTone = 'warn';
   }
 
   // ---- crew on duty ----------------------------------------------------------
@@ -150,16 +166,16 @@ export default function Dashboard() {
     const s = crew.members[i].shift;
     shifts[s] = (shifts[s] || 0) + 1;
   }
-  let avgSleep = 0;
+  let crewRestHours = 0;
   for (let i = 0; i < crew.members.length; i++) {
-    avgSleep += crew.members[i].sleepHours;
+    crewRestHours += crew.members[i].sleepHours;
   }
-  avgSleep = Math.round((avgSleep / crew.members.length) * 10) / 10;
-  let sleepClass = 'tile-ok';
-  if (avgSleep < 6) {
-    sleepClass = 'tile-bad';
-  } else if (avgSleep < 7) {
-    sleepClass = 'tile-warn';
+  crewRestHours = Math.round((crewRestHours / crew.members.length) * 10) / 10;
+  let crewRestTone: Tone = 'ok';
+  if (crewRestHours < CREW_REST_HOURS.BAD) {
+    crewRestTone = 'bad';
+  } else if (crewRestHours < CREW_REST_HOURS.WARN) {
+    crewRestTone = 'warn';
   }
 
   // ---- most urgent incident ---------------------------------------------------
@@ -180,46 +196,46 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      <header className="dash-header" style={{ borderBottom: '1px solid #232a3b', paddingBottom: 14 }}>
+      <header className="dash-header">
         <div>
           <h1 style={{ margin: 0, fontSize: 26, letterSpacing: 1 }}>
             {station.name}
-            <span style={{ fontSize: 13, marginLeft: 12, color: '#8892a6', fontWeight: 400 }}>
+            <span className="dash-orbit">
               {station.orbit} · {station.velocityKms} km/s · inc {station.inclinationDeg}°
             </span>
           </h1>
-          <p style={{ margin: '4px 0 0', color: '#8892a6', fontSize: 13 }}>
+          <p className="dash-meta">
             Mission day {station.daysInService} · crew {station.crewOnboard}/{station.crewCapacity} · last sync {lastSync}
           </p>
         </div>
-        <div className="status-pill" style={{ background: statusColor + '22', color: statusColor, border: '1px solid ' + statusColor }}>
-          <span className="status-dot" style={{ background: statusColor }} />
+        <div className={'status-pill ' + TONE_CLASS[statusTone]}>
+          <span className="status-dot" />
           {status}
         </div>
       </header>
 
       {status !== 'NOMINAL' && topIncident && (
-        <div className="alert-banner" style={{ borderColor: statusColor }}>
-          <strong style={{ color: statusColor }}>{status === 'CRITICAL' ? 'CRITICAL ALERT' : 'ATTENTION'}</strong>
+        <div className={'alert-banner ' + TONE_CLASS[statusTone]}>
+          <strong>{status === 'CRITICAL' ? 'CRITICAL ALERT' : 'ATTENTION'}</strong>
           <span style={{ marginLeft: 10 }}>
             {topIncident.id}: {topIncident.title}
           </span>
-          <span style={{ marginLeft: 'auto', color: '#8892a6', fontSize: 12 }}>{fmtDate(topIncident.timestamp)}</span>
+          <span className="alert-time">{fmtDate(topIncident.timestamp)}</span>
         </div>
       )}
 
       <div className="tiles">
-        <div className={'tile ' + (latestO2 < 19.5 ? 'tile-bad' : latestO2 < 19.9 ? 'tile-warn' : 'tile-ok')}>
+        <div className={'tile ' + TONE_CLASS[latestO2 < O2.FLOOR ? 'bad' : latestO2 < O2.WARN ? 'warn' : 'ok']}>
           <div className="tile-label">O2 Level</div>
           <div className="tile-value">
             {latestO2.toFixed(1)}
             <span className="tile-unit">%</span>
             <span className="tile-trend">{o2Trend}</span>
           </div>
-          <div className="tile-sub">floor 19.5 · cabin nominal 20.9</div>
+          <div className="tile-sub">floor {O2.FLOOR} · cabin nominal {O2.NOMINAL}</div>
         </div>
 
-        <div className={'tile ' + powerClass}>
+        <div className={'tile ' + TONE_CLASS[powerTone]}>
           <div className="tile-label">Power Output</div>
           <div className="tile-value">
             {latestPower}
@@ -229,7 +245,7 @@ export default function Dashboard() {
           <div className="tile-sub">avg {powerAvg.toFixed(0)} kW · budget {powerBudgetPct}%</div>
         </div>
 
-        <div className={'tile ' + (latestHullTemp > 40 || latestHullTemp < -30 ? 'tile-warn' : 'tile-ok')}>
+        <div className={'tile ' + TONE_CLASS[latestHullTemp > HULL_TEMP_C.MAX || latestHullTemp < HULL_TEMP_C.MIN ? 'warn' : 'ok']}>
           <div className="tile-label">Hull Temp</div>
           <div className="tile-value">
             {latestHullTemp}
@@ -238,16 +254,16 @@ export default function Dashboard() {
           <div className="tile-sub">day/night swing normal</div>
         </div>
 
-        <div className={'tile ' + (latestIntegrity < 98 ? 'tile-bad' : latestIntegrity < 99 ? 'tile-warn' : 'tile-ok')}>
+        <div className={'tile ' + TONE_CLASS[latestIntegrity < HULL_INTEGRITY.BAD ? 'bad' : latestIntegrity < HULL_INTEGRITY.WARN ? 'warn' : 'ok']}>
           <div className="tile-label">Hull Integrity</div>
           <div className="tile-value">
             {latestIntegrity.toFixed(1)}
             <span className="tile-unit">%</span>
           </div>
-          <div className="tile-sub">MMOD shielding rated to 97.0</div>
+          <div className="tile-sub">MMOD shielding rated to {HULL_INTEGRITY.RATED.toFixed(1)}</div>
         </div>
 
-        <div className={'tile ' + (unresolvedCritical > 0 ? 'tile-bad' : unresolvedWarning > 0 ? 'tile-warn' : 'tile-ok')}>
+        <div className={'tile ' + TONE_CLASS[unresolvedCritical > 0 ? 'bad' : unresolvedWarning > 0 ? 'warn' : 'ok']}>
           <div className="tile-label">Open Incidents</div>
           <div className="tile-value">
             {unresolvedCritical + unresolvedWarning}
@@ -258,22 +274,22 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className={'tile ' + resupplyClass}>
+        <div className={'tile ' + TONE_CLASS[resupplyTone]}>
           <div className="tile-label">Next Resupply</div>
           <div className="tile-value" style={{ fontSize: 24 }}>{resupplyLabel}</div>
           <div className="tile-sub">{fmtDate(station.nextResupply)}</div>
         </div>
 
-        <div className={'tile ' + sleepClass}>
+        <div className={'tile ' + TONE_CLASS[crewRestTone]}>
           <div className="tile-label">Crew Rest</div>
           <div className="tile-value">
-            {avgSleep}
+            {crewRestHours}
             <span className="tile-unit">h avg</span>
           </div>
           <div className="tile-sub">{onDuty.length} on duty · {offDuty.length} off duty</div>
         </div>
 
-        <div className="tile tile-ok">
+        <div className={'tile ' + TONE_CLASS.ok}>
           <div className="tile-label">Shift Board</div>
           <div className="tile-value" style={{ fontSize: 20 }}>
             α {shifts['alpha'] || 0} · β {shifts['beta'] || 0} · γ {shifts['gamma'] || 0}

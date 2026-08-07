@@ -2,7 +2,7 @@ import { test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CrewPanel from '../src/components/CrewPanel';
-import { POLL_INTERVAL_MS } from '../src/hooks/query-config';
+import { POLL_INTERVAL_MS } from '../src/config';
 import type { CrewResponse } from '../src/api/types';
 
 // The Crew panel at the global.fetch seam. Crew is Reference Data, so the claim

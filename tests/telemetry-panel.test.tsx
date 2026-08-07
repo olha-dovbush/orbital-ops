@@ -2,7 +2,7 @@ import { test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TelemetryChart from '../src/components/TelemetryChart';
-import { POLL_INTERVAL_MS } from '../src/hooks/query-config';
+import { POLL_INTERVAL_MS } from '../src/config';
 import type { TelemetryResponse } from '../src/api/types';
 
 // The Telemetry panel, exercised at the global.fetch seam: the API client, the

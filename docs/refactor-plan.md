@@ -95,11 +95,16 @@ replaces `getData(path): Promise<any>`. `src/hooks/` gains `useStation`,
 drops as the four fetch copies collapse into one hook; smoke test still passes.
 
 ### 4 — Constants
-`src/config.ts`: threshold bands as objects (`O2`, `POWER_BUDGET`,
-`HULL_INTEGRITY`, `SLEEP`, `RESUPPLY_DAYS`, `HULL_TEMP_OK`), scalars
+`src/config.ts`: threshold bands as objects (`O2`, `POWER_BUDGET_PCT`,
+`HULL_INTEGRITY`, `CREW_REST_HOURS`, `RESUPPLY_DAYS`, `HULL_TEMP_C`), scalars
 (`POLL_INTERVAL_MS`, `RETRY_COUNT`, `TREND_LOOKBACK`, trend deltas,
-`SPARKLINE_MAX_POINTS`, `POWER_RATED_KW`), `TELEMETRY_METRICS`, `TONE_CLASS`,
-`SEVERITY_COLORS`.
+`SPARKLINE_MAX_POINTS`, `POWER_RATED_KW`, `POWER_FLOOR_KW`),
+`TELEMETRY_METRICS`, `TONE_CLASS`, `SEVERITY_CLASS`.
+
+`SEVERITY_CLASS`, not `SEVERITY_COLORS`: the palette stays in `:root`, so the
+mapping's values are class names and the module holds no hex at all. The tone
+token is generic (`tone-ok`) rather than tile-specific, because the tiles, the
+status pill, and the alert banner all take their tint from it.
 **Verify:** `E1.7` green; no numeric literal thresholds left in `src/`.
 
 ### 5 — Domain

@@ -2,7 +2,7 @@ import { test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '../src/components/Dashboard';
-import { POLL_INTERVAL_MS } from '../src/hooks/query-config';
+import { POLL_INTERVAL_MS } from '../src/config';
 import type { ApiResources } from '../src/api/types';
 
 // The board at the global.fetch seam. The board is the only place that reads all
@@ -278,14 +278,14 @@ test('renders every tile with the value and tint its feeds imply', async () => {
   await advance(1_000);
 
   const expected: [string, string, string][] = [
-    ['O2 Level', 'tile-ok', '20.4%↑floor 19.5 · cabin nominal 20.9'],
-    ['Power Output', 'tile-ok', '85kW↑avg 70 kW · budget 94%'],
-    ['Hull Temp', 'tile-ok', '23°Cday/night swing normal'],
-    ['Hull Integrity', 'tile-warn', '98.7%MMOD shielding rated to 97.0'],
-    ['Open Incidents', 'tile-bad', '4open1 critical · 3 warning · 0 resolved today'],
-    ['Next Resupply', 'tile-ok', '22d 5hAug 2 14:30z'],
-    ['Crew Rest', 'tile-ok', '7.2h avg3 on duty · 3 off duty'],
-    ['Shift Board', 'tile-ok', 'α 2 · β 2 · γ 2commissioned Apr 12 00:00z']
+    ['O2 Level', 'tone-ok', '20.4%↑floor 19.5 · cabin nominal 20.9'],
+    ['Power Output', 'tone-ok', '85kW↑avg 70 kW · budget 94%'],
+    ['Hull Temp', 'tone-ok', '23°Cday/night swing normal'],
+    ['Hull Integrity', 'tone-warn', '98.7%MMOD shielding rated to 97.0'],
+    ['Open Incidents', 'tone-bad', '4open1 critical · 3 warning · 0 resolved today'],
+    ['Next Resupply', 'tone-ok', '22d 5hAug 2 14:30z'],
+    ['Crew Rest', 'tone-ok', '7.2h avg3 on duty · 3 off duty'],
+    ['Shift Board', 'tone-ok', 'α 2 · β 2 · γ 2commissioned Apr 12 00:00z']
   ];
 
   for (const [label, tint, body] of expected) {

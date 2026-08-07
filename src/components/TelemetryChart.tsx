@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTelemetry } from '../hooks/useTelemetry';
 import PanelNotice from './PanelNotice';
+import { O2, SPARKLINE_MAX_POINTS, TELEMETRY_METRICS } from '../config';
 import type { TelemetryMetric } from '../api/types';
 
 // Telemetry sparklines. Loading, retries, and cancellation on unmount belong to
@@ -29,11 +30,11 @@ export default function TelemetryChart() {
   const series = data.series[selected];
   let points = series.points;
 
-  // downsample to at most 12 points so the sparkline stays readable
-  if (points.length > 12) {
-    const bucketSize = points.length / 12;
+  // downsample so the sparkline stays readable
+  if (points.length > SPARKLINE_MAX_POINTS) {
+    const bucketSize = points.length / SPARKLINE_MAX_POINTS;
     const reduced: number[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < SPARKLINE_MAX_POINTS; i++) {
       const start = Math.floor(i * bucketSize);
       const end = Math.floor((i + 1) * bucketSize);
       let sum = 0;
@@ -61,15 +62,15 @@ export default function TelemetryChart() {
     })
     .join(' ');
 
-  // threshold breach computed during render, hardcoded floor again
+  // The breach marker reads the same O2 Floor the board enforces.
   const latest = points[points.length - 1];
-  const breach = selected === 'o2' && latest < 19.5;
+  const breach = selected === 'o2' && latest < O2.FLOOR;
 
   return (
     <section className="panel">
       <h2>Telemetry</h2>
       <div className="chart-tabs">
-        {(Object.keys(data.series) as TelemetryMetric[]).map((key) => (
+        {TELEMETRY_METRICS.map((key) => (
           <button
             key={key}
             className={key === selected ? 'chart-tab chart-tab-active' : 'chart-tab'}
@@ -81,7 +82,7 @@ export default function TelemetryChart() {
       </div>
       <div className="chart-body">
         <svg viewBox={'0 0 ' + w + ' ' + h} className="sparkline" preserveAspectRatio="none">
-          <polyline points={coords} fill="none" stroke={breach ? '#ff4d4d' : '#4da3ff'} strokeWidth="2" />
+          <polyline points={coords} className={breach ? 'sparkline-plot sparkline-plot-breach' : 'sparkline-plot'} fill="none" strokeWidth="2" />
         </svg>
         <div className="chart-stats">
           <span>

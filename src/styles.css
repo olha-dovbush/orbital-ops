@@ -32,11 +32,32 @@ body {
   margin-bottom: 24px;
 }
 
+/* Tone tokens. `src/config.ts` maps a domain tone to one of these class names;
+   everything tinted by tone reads --tone rather than naming a colour itself. */
+.tone-ok { --tone: var(--ok); }
+.tone-warn { --tone: var(--warn); }
+.tone-bad { --tone: var(--bad); }
+
 .dash-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-orbit {
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.dash-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .status-pill {
@@ -48,6 +69,10 @@ body {
   font-weight: 700;
   letter-spacing: 2px;
   font-size: 14px;
+  color: var(--tone);
+  border: 1px solid var(--tone);
+  /* 13.333% == the 0x22 alpha the pill was painted with before. */
+  background: color-mix(in srgb, var(--tone) 13.333%, transparent);
 }
 
 .status-dot {
@@ -55,6 +80,7 @@ body {
   height: 10px;
   border-radius: 50%;
   animation: pulse 2s infinite;
+  background: var(--tone);
 }
 
 @keyframes pulse {
@@ -67,11 +93,21 @@ body {
   align-items: center;
   margin-top: 16px;
   padding: 10px 14px;
-  border: 1px solid var(--warn);
+  border: 1px solid var(--tone);
   border-left-width: 4px;
   border-radius: 6px;
   background: #1a1420;
   font-size: 13px;
+}
+
+.alert-banner strong {
+  color: var(--tone);
+}
+
+.alert-time {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .alert-flash {
@@ -96,11 +132,8 @@ body {
   border-radius: 10px;
   padding: 14px 16px;
   border-top-width: 3px;
+  border-top-color: var(--tone);
 }
-
-.tile-ok { border-top-color: var(--ok); }
-.tile-warn { border-top-color: var(--warn); }
-.tile-bad { border-top-color: var(--bad); }
 
 .tile-label {
   color: var(--muted);
@@ -250,6 +283,11 @@ button {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--muted);
+}
+
+.crew-dot-on {
+  background: var(--ok);
 }
 
 .crew-main {
@@ -301,6 +339,10 @@ button {
   margin-top: 2px;
 }
 
+.sev-critical { background: var(--bad); }
+.sev-warning { background: var(--warn); }
+.sev-info { background: var(--accent); }
+
 .incident-main {
   display: flex;
   flex-direction: column;
@@ -348,6 +390,14 @@ button {
   background: #0d1322;
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.sparkline-plot {
+  stroke: var(--accent);
+}
+
+.sparkline-plot-breach {
+  stroke: var(--bad);
 }
 
 .chart-stats {
