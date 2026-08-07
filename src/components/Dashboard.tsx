@@ -2,19 +2,12 @@ import { useStation } from '../hooks/useStation';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
-import { sortIncidents } from '../domain/incidents';
-import { formatDay, formatInstant, isSameDay, timeUntil } from '../domain/board-time';
+import { sortIncidents, summariseIncidents } from '../domain/incidents';
+import { crewRest, dutySplit, shiftHeadcount } from '../domain/crew';
+import { formatDay, formatInstant, timeUntil } from '../domain/board-time';
 import { stationStatus } from '../domain/station-status';
 import { average, latest, metricTone, powerBudgetPct, trend } from '../domain/telemetry';
-import {
-  CREW_REST_HOURS,
-  HULL_INTEGRITY,
-  O2,
-  O2_TREND_DELTA,
-  POWER_TREND_DELTA_KW,
-  TONE_CLASS,
-  type Tone
-} from '../config';
+import { HULL_INTEGRITY, O2, O2_TREND_DELTA, POWER_TREND_DELTA_KW, TONE_CLASS } from '../config';
 
 // The main mission control view. Started small in 2034. It has... grown.
 // Header, summary tiles, alert banner, resupply countdown, shift board --
@@ -78,19 +71,7 @@ export default function Dashboard() {
   const latestHullTemp = latest(telemetry.series.hullTemp.points);
   const latestIntegrity = latest(telemetry.series.hullIntegrity.points);
 
-  let unresolvedCritical = 0;
-  let unresolvedWarning = 0;
-  let resolvedToday = 0;
-  for (let i = 0; i < incidents.items.length; i++) {
-    const inc = incidents.items[i];
-    if (!inc.resolved && inc.severity === 'critical') {
-      unresolvedCritical++;
-    } else if (!inc.resolved && inc.severity === 'warning') {
-      unresolvedWarning++;
-    } else if (inc.resolved && isSameDay(inc.timestamp, boardTime)) {
-      resolvedToday++;
-    }
-  }
+  const { unresolvedCritical, unresolvedWarning, resolvedToday } = summariseIncidents(incidents.items, boardTime);
 
   // Station Status and the telemetry tiles' tones are the domain modules' — see
   // src/domain/station-status.ts and docs/decisions/o2-threshold.md.
@@ -105,31 +86,9 @@ export default function Dashboard() {
   const resupply = timeUntil(station.nextResupply, boardTime);
 
   // ---- crew on duty ----------------------------------------------------------
-  const onDuty = [];
-  const offDuty = [];
-  for (let i = 0; i < crew.members.length; i++) {
-    if (crew.members[i].onDuty) {
-      onDuty.push(crew.members[i]);
-    } else {
-      offDuty.push(crew.members[i]);
-    }
-  }
-  const shifts: Record<string, number> = {};
-  for (let i = 0; i < crew.members.length; i++) {
-    const s = crew.members[i].shift;
-    shifts[s] = (shifts[s] || 0) + 1;
-  }
-  let crewRestHours = 0;
-  for (let i = 0; i < crew.members.length; i++) {
-    crewRestHours += crew.members[i].sleepHours;
-  }
-  crewRestHours = Math.round((crewRestHours / crew.members.length) * 10) / 10;
-  let crewRestTone: Tone = 'ok';
-  if (crewRestHours < CREW_REST_HOURS.BAD) {
-    crewRestTone = 'bad';
-  } else if (crewRestHours < CREW_REST_HOURS.WARN) {
-    crewRestTone = 'warn';
-  }
+  const { onDuty, offDuty } = dutySplit(crew.members);
+  const shifts = shiftHeadcount(crew.members);
+  const rest = crewRest(crew.members);
 
   // ---- most urgent incident ---------------------------------------------------
   const unresolved = sortIncidents(incidents.items.filter((item) => !item.resolved));
@@ -226,10 +185,10 @@ export default function Dashboard() {
           <div className="tile-sub">{formatInstant(station.nextResupply)}</div>
         </div>
 
-        <div className={'tile ' + TONE_CLASS[crewRestTone]}>
+        <div className={'tile ' + TONE_CLASS[rest.tone]}>
           <div className="tile-label">Crew Rest</div>
           <div className="tile-value">
-            {crewRestHours}
+            {rest.hours}
             <span className="tile-unit">h avg</span>
           </div>
           <div className="tile-sub">{onDuty.length} on duty · {offDuty.length} off duty</div>
