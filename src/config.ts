@@ -64,6 +64,13 @@ export const SPARKLINE_MAX_POINTS = 12;
 
 // ---- domain → token --------------------------------------------------------
 
+/** The shifts the board reports, in the order it reports them, each with the mark it prints. */
+export const SHIFTS: readonly { name: string; mark: string }[] = [
+  { name: 'alpha', mark: 'α' },
+  { name: 'beta', mark: 'β' },
+  { name: 'gamma', mark: 'γ' }
+];
+
 /** The metrics the telemetry panel offers, in the order it offers them. */
 export const TELEMETRY_METRICS: readonly TelemetryMetric[] = ['o2', 'power', 'hullTemp', 'hullIntegrity'];
 

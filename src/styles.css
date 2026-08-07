@@ -148,6 +148,16 @@ body {
   font-weight: 700;
 }
 
+/* A value that is a phrase rather than a reading — a countdown, a shift board —
+   set small enough that the longest one it can print still fits one line. */
+.tile-value-md {
+  font-size: 24px;
+}
+
+.tile-value-sm {
+  font-size: 20px;
+}
+
 .tile-unit {
   font-size: 13px;
   color: var(--muted);

@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { sortIncidents, summariseIncidents } from './incidents';
+import { openIncidentTone, sortIncidents, summariseIncidents } from './incidents';
 import type { Incident, Severity } from '../api/types';
 
 function incident(id: string, severity: Severity, timestamp: string, resolved = false): Incident {
@@ -117,4 +117,22 @@ test('an empty feed counts to zero on every line', () => {
     unresolvedWarning: 0,
     resolvedToday: 0
   });
+});
+
+const counts = (unresolvedCritical: number, unresolvedWarning: number, resolvedToday = 0) => ({
+  unresolvedCritical,
+  unresolvedWarning,
+  resolvedToday
+});
+
+test('one open critical is red however many quiet warnings sit beside it', () => {
+  expect(openIncidentTone(counts(1, 7))).toBe('bad');
+});
+
+test('open warnings with no critical are amber', () => {
+  expect(openIncidentTone(counts(0, 1))).toBe('warn');
+});
+
+test('nothing open is green, whatever the station cleared today', () => {
+  expect(openIncidentTone(counts(0, 0, 5))).toBe('ok');
 });

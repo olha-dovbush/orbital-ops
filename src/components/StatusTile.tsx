@@ -17,13 +17,19 @@ type StatusTileProps = {
   trend?: Trend;
   subtitle: string;
   tone: Tone;
+  /**
+   * How much room the value needs. A reading is set at full size and says
+   * nothing; a value that is a phrase rather than a reading is set smaller so it
+   * still fits one line.
+   */
+  valueSize?: 'md' | 'sm';
 };
 
-export default function StatusTile({ label, value, unit, trend, subtitle, tone }: StatusTileProps) {
+export default function StatusTile({ label, value, unit, trend, subtitle, tone, valueSize }: StatusTileProps) {
   return (
     <div className={'tile ' + TONE_CLASS[tone]}>
       <div className="tile-label">{label}</div>
-      <div className="tile-value">
+      <div className={valueSize === undefined ? 'tile-value' : 'tile-value tile-value-' + valueSize}>
         {value}
         {unit !== undefined && <span className="tile-unit">{unit}</span>}
         {trend !== undefined && <span className="tile-trend">{trend}</span>}

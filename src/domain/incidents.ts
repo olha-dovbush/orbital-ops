@@ -1,5 +1,6 @@
 // Pure incident rules. No React, no clock reads.
 
+import type { Tone } from '../config';
 import type { Incident, Severity } from '../api/types';
 import { isSameDay } from './board-time';
 
@@ -52,4 +53,15 @@ export function summariseIncidents(items: Incident[], boardTime: string): Incide
   }
 
   return counts;
+}
+
+/**
+ * How loudly the open incidents want an operator: the worst severity still open,
+ * never a blend of them. One critical is red even among quiet warnings — an
+ * average would let the warnings talk it down to amber. What resolved today is
+ * history and tints nothing.
+ */
+export function openIncidentTone(counts: IncidentCounts): Tone {
+  if (counts.unresolvedCritical > 0) return 'bad';
+  return counts.unresolvedWarning > 0 ? 'warn' : 'ok';
 }

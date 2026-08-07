@@ -3,16 +3,16 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents, summariseIncidents } from '../domain/incidents';
-import { crewRest, dutySplit, shiftHeadcount } from '../domain/crew';
-import { formatDay, formatInstant, timeUntil } from '../domain/board-time';
+import { formatInstant } from '../domain/board-time';
 import { stationStatus } from '../domain/station-status';
 import { latest } from '../domain/telemetry';
 import TelemetryTiles from './TelemetryTiles';
+import OperationsTiles from './OperationsTiles';
 import { TONE_CLASS } from '../config';
 
-// The main mission control view. Started small in 2034. It has... grown.
-// Header, summary tiles, alert banner, resupply countdown, shift board --
-// everything lives here because it was "just one more tile" every sprint.
+// The main mission control view. The tiles it once held tile by tile now belong
+// to the two tile groups; what is left here is the header, the alert banner, and
+// the composition itself.
 //
 // The board reads all four resources, so unlike the panels it gates on the whole
 // set: a tile grid missing a feed is worse than no grid.
@@ -70,19 +70,14 @@ export default function Dashboard() {
   const latestO2 = latest(telemetry.series.o2.points);
   const latestPower = latest(telemetry.series.power.points);
 
-  const { unresolvedCritical, unresolvedWarning, resolvedToday } = summariseIncidents(incidents.items, boardTime);
+  // The operations tiles' own counts, countdown, and tones belong to
+  // OperationsTiles. What the board still needs here is the count Station Status
+  // is derived from.
+  const { unresolvedCritical } = summariseIncidents(incidents.items, boardTime);
 
   // Station Status is the domain module's — see src/domain/station-status.ts and
   // docs/decisions/o2-threshold.md.
   const { status, tone: statusTone } = stationStatus(latestO2, latestPower, unresolvedCritical);
-
-  // ---- resupply countdown ----------------------------------------------------
-  const resupply = timeUntil(station.nextResupply, boardTime);
-
-  // ---- crew on duty ----------------------------------------------------------
-  const { onDuty, offDuty } = dutySplit(crew.members);
-  const shifts = shiftHeadcount(crew.members);
-  const rest = crewRest(crew.members);
 
   // ---- most urgent incident ---------------------------------------------------
   const unresolved = sortIncidents(incidents.items.filter((item) => !item.resolved));
@@ -125,40 +120,12 @@ export default function Dashboard() {
 
       <div className="tiles">
         <TelemetryTiles series={telemetry.series} />
-
-        <div className={'tile ' + TONE_CLASS[unresolvedCritical > 0 ? 'bad' : unresolvedWarning > 0 ? 'warn' : 'ok']}>
-          <div className="tile-label">Open Incidents</div>
-          <div className="tile-value">
-            {unresolvedCritical + unresolvedWarning}
-            <span className="tile-unit">open</span>
-          </div>
-          <div className="tile-sub">
-            {unresolvedCritical} critical · {unresolvedWarning} warning · {resolvedToday} resolved today
-          </div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS[resupply.tone]}>
-          <div className="tile-label">Next Resupply</div>
-          <div className="tile-value" style={{ fontSize: 24 }}>{resupply.label}</div>
-          <div className="tile-sub">{formatInstant(station.nextResupply)}</div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS[rest.tone]}>
-          <div className="tile-label">Crew Rest</div>
-          <div className="tile-value">
-            {rest.hours}
-            <span className="tile-unit">h avg</span>
-          </div>
-          <div className="tile-sub">{onDuty.length} on duty · {offDuty.length} off duty</div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS.ok}>
-          <div className="tile-label">Shift Board</div>
-          <div className="tile-value" style={{ fontSize: 20 }}>
-            α {shifts['alpha'] || 0} · β {shifts['beta'] || 0} · γ {shifts['gamma'] || 0}
-          </div>
-          <div className="tile-sub">commissioned {formatDay(station.commissioned)}</div>
-        </div>
+        <OperationsTiles
+          station={station}
+          crew={crew.members}
+          incidents={incidents.items}
+          boardTime={boardTime}
+        />
       </div>
     </div>
   );
