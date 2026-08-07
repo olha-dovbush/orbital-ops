@@ -112,12 +112,36 @@ function stub(impl: (url: string) => Promise<unknown>): FetchMock {
   return fetchMock;
 }
 
-function everyFeedReadable() {
+// The fixtures, with the named feeds swapped for the ones a test needs. Status,
+// tones, and the banner are all derived from the payloads, so a test states the
+// reading it is about and asserts what the board makes of it.
+function feeds(overrides: Partial<ApiResources> = {}) {
+  const served: ApiResources = { ...payloads, ...overrides };
   return stub((url: string) => {
     const resource = url.slice('/api/'.length, -'.json'.length) as keyof ApiResources;
-    return Promise.resolve({ ok: true, json: () => Promise.resolve(payloads[resource]) });
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(served[resource]) });
   });
 }
+
+function everyFeedReadable() {
+  return feeds();
+}
+
+/** The telemetry feed with its newest O2 reading replaced. */
+function o2Reading(latest: number): ApiResources['telemetry'] {
+  const o2 = payloads.telemetry.series.o2;
+  return {
+    ...payloads.telemetry,
+    series: { ...payloads.telemetry.series, o2: { ...o2, points: [...o2.points.slice(0, -1), latest] } }
+  };
+}
+
+function incidentFeed(items: ApiResources['incidents']['items']): ApiResources['incidents'] {
+  return { ...payloads.incidents, items };
+}
+
+// Nothing critical still open, so Station Status is the O2 reading's alone.
+const noCriticalOpen = payloads.incidents.items.filter((item) => item.severity !== 'critical' || item.resolved);
 
 // The uplink is broken at the transport, not with ?fail=1: the query parameter is
 // a demo affordance, and a test that leaned on it would stop covering the real
@@ -142,6 +166,12 @@ function tile(label: string) {
   const body = screen.getByText(label).closest('.tile');
   if (body === null) throw new Error(`no tile labelled ${label}`);
   return body;
+}
+
+function banner() {
+  const found = document.querySelector('.alert-banner');
+  if (found === null) throw new Error('no alert banner on the board');
+  return found;
 }
 
 beforeEach(() => {
@@ -292,6 +322,96 @@ test('renders every tile with the value and tint its feeds imply', async () => {
     expect(tile(label).className).toBe(`tile ${tint}`);
     expect(tile(label).textContent).toBe(label + body);
   }
+});
+
+// ---- the O2 Floor, from both sides -----------------------------------------
+// 19.5 is the floor and 19.9 the warning band — see docs/decisions/o2-threshold.md.
+// The board is read at each boundary rather than at a comfortable distance from
+// it, because an off-by-one in the comparison only shows up on the boundary.
+
+test('at the O2 Floor exactly, the board is DEGRADED and the O2 tile amber', async () => {
+  feeds({ telemetry: o2Reading(19.5), incidents: incidentFeed(noCriticalOpen) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('DEGRADED')).toBeTruthy();
+  expect(tile('O2 Level').className).toBe('tile tone-warn');
+});
+
+test('a breath below the O2 Floor, the board is CRITICAL and the O2 tile red', async () => {
+  feeds({ telemetry: o2Reading(19.4), incidents: incidentFeed(noCriticalOpen) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('CRITICAL')).toBeTruthy();
+  expect(tile('O2 Level').className).toBe('tile tone-bad');
+});
+
+test('above the warning band with nothing critical open, the board is NOMINAL and unbannered', async () => {
+  feeds({ telemetry: o2Reading(20.0), incidents: incidentFeed(noCriticalOpen) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('NOMINAL')).toBeTruthy();
+  expect(tile('O2 Level').className).toBe('tile tone-ok');
+  expect(document.querySelector('.alert-banner')).toBeNull();
+});
+
+// ---- the alert banner --------------------------------------------------------
+
+test('the banner names the most urgent unresolved incident, severity over recency', async () => {
+  // A warning raised after the critical. The escalation still has to name the
+  // critical: severity outranks recency.
+  const items = payloads.incidents.items.map((item) =>
+    item.id === 'INC-2106' ? { ...item, timestamp: '2036-07-11T08:30:00Z' } : item
+  );
+  feeds({ incidents: incidentFeed(items) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(banner().textContent).toContain('INC-2107: CO2 scrubber cartridge 3 efficiency below 80%');
+  expect(banner().textContent).not.toContain('INC-2106');
+});
+
+test('the banner still appears when the escalation has no incident to name', async () => {
+  // O2 below the floor with the feed all clear: the station is CRITICAL on its
+  // reading alone. An escalation with nothing to name is still an escalation —
+  // the banner appears, and simply names nothing.
+  const allResolved = payloads.incidents.items.map((item) => ({ ...item, resolved: true }));
+  feeds({ telemetry: o2Reading(19.4), incidents: incidentFeed(allResolved) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('CRITICAL ALERT')).toBeTruthy();
+  expect(banner().textContent).not.toContain('INC-');
+});
+
+test('the banner reads ATTENTION at DEGRADED, and does not flash', async () => {
+  feeds({ telemetry: o2Reading(19.5), incidents: incidentFeed(noCriticalOpen) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('ATTENTION')).toBeTruthy();
+  expect(banner().className).toContain('tone-warn');
+  expect(banner().className).not.toContain('alert-flash');
+});
+
+test('the banner reads CRITICAL ALERT at CRITICAL, and flashes as it appears', async () => {
+  feeds({ telemetry: o2Reading(19.4), incidents: incidentFeed(noCriticalOpen) });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(screen.getByText('CRITICAL ALERT')).toBeTruthy();
+  expect(banner().className).toContain('tone-bad');
+  // A class the banner mounts with, not a class poked onto the DOM afterwards.
+  expect(banner().className).toContain('alert-flash');
 });
 
 test('counts down and asks what resolved today against Board Time, not a hardcoded instant', async () => {
