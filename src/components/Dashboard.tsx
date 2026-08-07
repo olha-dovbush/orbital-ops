@@ -6,8 +6,9 @@ import { sortIncidents, summariseIncidents } from '../domain/incidents';
 import { crewRest, dutySplit, shiftHeadcount } from '../domain/crew';
 import { formatDay, formatInstant, timeUntil } from '../domain/board-time';
 import { stationStatus } from '../domain/station-status';
-import { average, latest, metricTone, powerBudgetPct, trend } from '../domain/telemetry';
-import { HULL_INTEGRITY, O2, O2_TREND_DELTA, POWER_TREND_DELTA_KW, TONE_CLASS } from '../config';
+import { latest } from '../domain/telemetry';
+import TelemetryTiles from './TelemetryTiles';
+import { TONE_CLASS } from '../config';
 
 // The main mission control view. Started small in 2034. It has... grown.
 // Header, summary tiles, alert banner, resupply countdown, shift board --
@@ -64,23 +65,16 @@ export default function Dashboard() {
   const boardTime = telemetry.updated;
 
   // ---- telemetry readings ----------------------------------------------------
-  const o2Points = telemetry.series.o2.points;
-  const powerPoints = telemetry.series.power.points;
-  const latestO2 = latest(o2Points);
-  const latestPower = latest(powerPoints);
-  const latestHullTemp = latest(telemetry.series.hullTemp.points);
-  const latestIntegrity = latest(telemetry.series.hullIntegrity.points);
+  // The tiles' own readings, arrows, and tones belong to TelemetryTiles. What the
+  // board still needs here is the two readings Station Status is derived from.
+  const latestO2 = latest(telemetry.series.o2.points);
+  const latestPower = latest(telemetry.series.power.points);
 
   const { unresolvedCritical, unresolvedWarning, resolvedToday } = summariseIncidents(incidents.items, boardTime);
 
-  // Station Status and the telemetry tiles' tones are the domain modules' — see
-  // src/domain/station-status.ts and docs/decisions/o2-threshold.md.
+  // Station Status is the domain module's — see src/domain/station-status.ts and
+  // docs/decisions/o2-threshold.md.
   const { status, tone: statusTone } = stationStatus(latestO2, latestPower, unresolvedCritical);
-
-  const o2Trend = trend(o2Points, O2_TREND_DELTA);
-  const powerTrend = trend(powerPoints, POWER_TREND_DELTA_KW);
-  const powerAvg = average(powerPoints);
-  const powerBudget = powerBudgetPct(latestPower);
 
   // ---- resupply countdown ----------------------------------------------------
   const resupply = timeUntil(station.nextResupply, boardTime);
@@ -130,43 +124,7 @@ export default function Dashboard() {
       )}
 
       <div className="tiles">
-        <div className={'tile ' + TONE_CLASS[metricTone('o2', latestO2)]}>
-          <div className="tile-label">O2 Level</div>
-          <div className="tile-value">
-            {latestO2.toFixed(1)}
-            <span className="tile-unit">%</span>
-            <span className="tile-trend">{o2Trend}</span>
-          </div>
-          <div className="tile-sub">floor {O2.FLOOR} · cabin nominal {O2.NOMINAL}</div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS[metricTone('power', latestPower)]}>
-          <div className="tile-label">Power Output</div>
-          <div className="tile-value">
-            {latestPower}
-            <span className="tile-unit">kW</span>
-            <span className="tile-trend">{powerTrend}</span>
-          </div>
-          <div className="tile-sub">avg {powerAvg.toFixed(0)} kW · budget {powerBudget}%</div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS[metricTone('hullTemp', latestHullTemp)]}>
-          <div className="tile-label">Hull Temp</div>
-          <div className="tile-value">
-            {latestHullTemp}
-            <span className="tile-unit">°C</span>
-          </div>
-          <div className="tile-sub">day/night swing normal</div>
-        </div>
-
-        <div className={'tile ' + TONE_CLASS[metricTone('hullIntegrity', latestIntegrity)]}>
-          <div className="tile-label">Hull Integrity</div>
-          <div className="tile-value">
-            {latestIntegrity.toFixed(1)}
-            <span className="tile-unit">%</span>
-          </div>
-          <div className="tile-sub">MMOD shielding rated to {HULL_INTEGRITY.RATED.toFixed(1)}</div>
-        </div>
+        <TelemetryTiles series={telemetry.series} />
 
         <div className={'tile ' + TONE_CLASS[unresolvedCritical > 0 ? 'bad' : unresolvedWarning > 0 ? 'warn' : 'ok']}>
           <div className="tile-label">Open Incidents</div>
