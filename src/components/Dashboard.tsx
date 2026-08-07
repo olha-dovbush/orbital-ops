@@ -4,18 +4,15 @@ import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
 import { formatDay, formatInstant, isSameDay, timeUntil } from '../domain/board-time';
+import { stationStatus } from '../domain/station-status';
+import { average, latest, metricTone, powerBudgetPct, trend } from '../domain/telemetry';
 import {
   CREW_REST_HOURS,
   HULL_INTEGRITY,
-  HULL_TEMP_C,
   O2,
   O2_TREND_DELTA,
-  POWER_BUDGET_PCT,
-  POWER_FLOOR_KW,
-  POWER_RATED_KW,
   POWER_TREND_DELTA_KW,
   TONE_CLASS,
-  TREND_LOOKBACK,
   type Tone
 } from '../config';
 
@@ -73,15 +70,13 @@ export default function Dashboard() {
   // own reading, never the wall clock — see docs/decisions/board-time.md.
   const boardTime = telemetry.updated;
 
-  // ---- inline status computation -------------------------------------------
+  // ---- telemetry readings ----------------------------------------------------
   const o2Points = telemetry.series.o2.points;
   const powerPoints = telemetry.series.power.points;
-  const hullTempPoints = telemetry.series.hullTemp.points;
-  const integrityPoints = telemetry.series.hullIntegrity.points;
-  const latestO2 = o2Points[o2Points.length - 1];
-  const latestPower = powerPoints[powerPoints.length - 1];
-  const latestHullTemp = hullTempPoints[hullTempPoints.length - 1];
-  const latestIntegrity = integrityPoints[integrityPoints.length - 1];
+  const latestO2 = latest(o2Points);
+  const latestPower = latest(powerPoints);
+  const latestHullTemp = latest(telemetry.series.hullTemp.points);
+  const latestIntegrity = latest(telemetry.series.hullIntegrity.points);
 
   let unresolvedCritical = 0;
   let unresolvedWarning = 0;
@@ -97,48 +92,14 @@ export default function Dashboard() {
     }
   }
 
-  // The O2 Floor, and every band below it, is the config module's — see
-  // docs/decisions/o2-threshold.md.
-  let status = 'NOMINAL';
-  let statusTone: Tone = 'ok';
-  if (latestO2 < O2.FLOOR || unresolvedCritical > 1) {
-    status = 'CRITICAL';
-    statusTone = 'bad';
-  } else if (latestO2 < O2.WARN || latestPower < POWER_FLOOR_KW || unresolvedCritical > 0) {
-    status = 'DEGRADED';
-    statusTone = 'warn';
-  }
+  // Station Status and the telemetry tiles' tones are the domain modules' — see
+  // src/domain/station-status.ts and docs/decisions/o2-threshold.md.
+  const { status, tone: statusTone } = stationStatus(latestO2, latestPower, unresolvedCritical);
 
-  // ---- O2 trend arrow --------------------------------------------------------
-  let o2Trend = '→';
-  const o2Prev = o2Points[o2Points.length - TREND_LOOKBACK];
-  if (latestO2 - o2Prev > O2_TREND_DELTA) {
-    o2Trend = '↑';
-  } else if (latestO2 - o2Prev < -O2_TREND_DELTA) {
-    o2Trend = '↓';
-  }
-
-  let powerTrend = '→';
-  const powerPrev = powerPoints[powerPoints.length - TREND_LOOKBACK];
-  if (latestPower - powerPrev > POWER_TREND_DELTA_KW) {
-    powerTrend = '↑';
-  } else if (latestPower - powerPrev < -POWER_TREND_DELTA_KW) {
-    powerTrend = '↓';
-  }
-
-  // ---- power budget ----------------------------------------------------------
-  let powerAvg = 0;
-  for (let i = 0; i < powerPoints.length; i++) {
-    powerAvg += powerPoints[i];
-  }
-  powerAvg = powerAvg / powerPoints.length;
-  const powerBudgetPct = Math.round((latestPower / POWER_RATED_KW) * 100);
-  let powerTone: Tone = 'ok';
-  if (powerBudgetPct < POWER_BUDGET_PCT.BAD) {
-    powerTone = 'bad';
-  } else if (powerBudgetPct < POWER_BUDGET_PCT.WARN) {
-    powerTone = 'warn';
-  }
+  const o2Trend = trend(o2Points, O2_TREND_DELTA);
+  const powerTrend = trend(powerPoints, POWER_TREND_DELTA_KW);
+  const powerAvg = average(powerPoints);
+  const powerBudget = powerBudgetPct(latestPower);
 
   // ---- resupply countdown ----------------------------------------------------
   const resupply = timeUntil(station.nextResupply, boardTime);
@@ -210,7 +171,7 @@ export default function Dashboard() {
       )}
 
       <div className="tiles">
-        <div className={'tile ' + TONE_CLASS[latestO2 < O2.FLOOR ? 'bad' : latestO2 < O2.WARN ? 'warn' : 'ok']}>
+        <div className={'tile ' + TONE_CLASS[metricTone('o2', latestO2)]}>
           <div className="tile-label">O2 Level</div>
           <div className="tile-value">
             {latestO2.toFixed(1)}
@@ -220,17 +181,17 @@ export default function Dashboard() {
           <div className="tile-sub">floor {O2.FLOOR} · cabin nominal {O2.NOMINAL}</div>
         </div>
 
-        <div className={'tile ' + TONE_CLASS[powerTone]}>
+        <div className={'tile ' + TONE_CLASS[metricTone('power', latestPower)]}>
           <div className="tile-label">Power Output</div>
           <div className="tile-value">
             {latestPower}
             <span className="tile-unit">kW</span>
             <span className="tile-trend">{powerTrend}</span>
           </div>
-          <div className="tile-sub">avg {powerAvg.toFixed(0)} kW · budget {powerBudgetPct}%</div>
+          <div className="tile-sub">avg {powerAvg.toFixed(0)} kW · budget {powerBudget}%</div>
         </div>
 
-        <div className={'tile ' + TONE_CLASS[latestHullTemp > HULL_TEMP_C.MAX || latestHullTemp < HULL_TEMP_C.MIN ? 'warn' : 'ok']}>
+        <div className={'tile ' + TONE_CLASS[metricTone('hullTemp', latestHullTemp)]}>
           <div className="tile-label">Hull Temp</div>
           <div className="tile-value">
             {latestHullTemp}
@@ -239,7 +200,7 @@ export default function Dashboard() {
           <div className="tile-sub">day/night swing normal</div>
         </div>
 
-        <div className={'tile ' + TONE_CLASS[latestIntegrity < HULL_INTEGRITY.BAD ? 'bad' : latestIntegrity < HULL_INTEGRITY.WARN ? 'warn' : 'ok']}>
+        <div className={'tile ' + TONE_CLASS[metricTone('hullIntegrity', latestIntegrity)]}>
           <div className="tile-label">Hull Integrity</div>
           <div className="tile-value">
             {latestIntegrity.toFixed(1)}

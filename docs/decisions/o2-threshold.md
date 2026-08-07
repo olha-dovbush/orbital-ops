@@ -37,8 +37,10 @@ never updated because nothing called it.
 
 - The canonical rules live in `src/config.ts` and are consumed from there.
   Nothing recomputes a threshold locally.
-- Deleting `computeStationStatus` is safe **only once its replacement exists**
-  in `src/domain/` — it is unreachable, but it encodes the status rules and is
-  the last written record of them outside this file.
+- Deleting `computeStationStatus` was safe **only once its replacement existed**
+  in `src/domain/` — it was unreachable, but it encoded the status rules and was
+  the last written record of them outside this file. That replacement is now
+  `src/domain/station-status.ts`, tested on both boundaries, and the fossil went
+  with the whole of `src/utils.ts`.
 - If ops later insists on 19.0, change `src/config.ts` and update this record.
   Do not reintroduce a second threshold to satisfy both.
