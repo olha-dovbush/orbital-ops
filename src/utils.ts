@@ -10,10 +10,3 @@ export function computeStationStatus(o2: number, power: number, unresolvedCritic
   }
   return 'NOMINAL';
 }
-
-export function formatTimestamp(iso: string) {
-  const d = new Date(iso);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
-  return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC';
-}

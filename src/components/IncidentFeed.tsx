@@ -3,7 +3,7 @@ import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
 import PanelNotice from './PanelNotice';
 import { SEVERITY_CLASS } from '../config';
-import { formatTimestamp } from '../utils';
+import { formatInstant } from '../domain/mission-time';
 
 // Incident feed. The fetch, the retry budget, and the loading/error chrome all
 // belong to shared code now; what is left here is the feed itself.
@@ -53,7 +53,7 @@ export default function IncidentFeed() {
                 {inc.id} · {inc.title}
               </span>
               <span className="incident-meta">
-                {inc.system} · {formatTimestamp(inc.timestamp)} · {inc.resolved ? 'resolved' : 'open'}
+                {inc.system} · {formatInstant(inc.timestamp)} · {inc.resolved ? 'resolved' : 'open'}
               </span>
             </div>
           </li>

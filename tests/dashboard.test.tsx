@@ -285,11 +285,28 @@ test('renders every tile with the value and tint its feeds imply', async () => {
     ['Open Incidents', 'tone-bad', '4open1 critical · 3 warning · 0 resolved today'],
     ['Next Resupply', 'tone-ok', '22d 5hAug 2 14:30z'],
     ['Crew Rest', 'tone-ok', '7.2h avg3 on duty · 3 off duty'],
-    ['Shift Board', 'tone-ok', 'α 2 · β 2 · γ 2commissioned Apr 12 00:00z']
+    ['Shift Board', 'tone-ok', 'α 2 · β 2 · γ 2commissioned Apr 12']
   ];
 
   for (const [label, tint, body] of expected) {
     expect(tile(label).className).toBe(`tile ${tint}`);
     expect(tile(label).textContent).toBe(label + body);
   }
+});
+
+test('counts down and asks what resolved today against Board Time, not a hardcoded instant', async () => {
+  // The same feeds, read a day earlier: both answers move with the telemetry
+  // reading because they are derived from it. See docs/decisions/board-time.md.
+  stub((url: string) => {
+    const resource = url.slice('/api/'.length, -'.json'.length) as keyof ApiResources;
+    const payload =
+      resource === 'telemetry' ? { ...payloads.telemetry, updated: '2036-07-10T09:00:00Z' } : payloads[resource];
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(payload) });
+  });
+
+  renderBoard();
+  await advance(1_000);
+
+  expect(tile('Next Resupply').textContent).toContain('23d 5h');
+  expect(tile('Open Incidents').textContent).toContain('2 resolved today');
 });

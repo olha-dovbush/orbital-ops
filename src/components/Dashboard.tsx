@@ -3,6 +3,7 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
+import { formatDay, formatInstant, isSameDay, timeUntil } from '../domain/mission-time';
 import {
   CREW_REST_HOURS,
   HULL_INTEGRITY,
@@ -13,7 +14,6 @@ import {
   POWER_FLOOR_KW,
   POWER_RATED_KW,
   POWER_TREND_DELTA_KW,
-  RESUPPLY_DAYS,
   TONE_CLASS,
   TREND_LOOKBACK,
   type Tone
@@ -69,6 +69,10 @@ export default function Dashboard() {
     );
   }
 
+  // Board Time: the instant the board counts from. It is the telemetry feed's
+  // own reading, never the wall clock — see docs/decisions/board-time.md.
+  const boardTime = telemetry.updated;
+
   // ---- inline status computation -------------------------------------------
   const o2Points = telemetry.series.o2.points;
   const powerPoints = telemetry.series.power.points;
@@ -88,7 +92,7 @@ export default function Dashboard() {
       unresolvedCritical++;
     } else if (!inc.resolved && inc.severity === 'warning') {
       unresolvedWarning++;
-    } else if (inc.resolved && inc.timestamp.indexOf('2036-07-11') === 0) {
+    } else if (inc.resolved && isSameDay(inc.timestamp, boardTime)) {
       resolvedToday++;
     }
   }
@@ -137,19 +141,7 @@ export default function Dashboard() {
   }
 
   // ---- resupply countdown ----------------------------------------------------
-  const resupplyDate = new Date(station.nextResupply);
-  const nowMs = new Date('2036-07-11T09:00:00Z').getTime();
-  const msLeft = resupplyDate.getTime() - nowMs;
-  const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
-  const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  let resupplyLabel = daysLeft + 'd ' + hoursLeft + 'h';
-  let resupplyTone: Tone = 'ok';
-  if (daysLeft < RESUPPLY_DAYS.BAD) {
-    resupplyTone = 'bad';
-    resupplyLabel = resupplyLabel + ' ⚠';
-  } else if (daysLeft < RESUPPLY_DAYS.WARN) {
-    resupplyTone = 'warn';
-  }
+  const resupply = timeUntil(station.nextResupply, boardTime);
 
   // ---- crew on duty ----------------------------------------------------------
   const onDuty = [];
@@ -182,13 +174,6 @@ export default function Dashboard() {
   const unresolved = sortIncidents(incidents.items.filter((item) => !item.resolved));
   const topIncident = unresolved.length > 0 ? unresolved[0] : null;
 
-  // date formatting, local copy (utils.ts has one too but it formats differently)
-  const fmtDate = (iso: string) => {
-    const d = new Date(iso);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + 'z';
-  };
-
   // When the newest Live Resource reading landed, in the operator's own clock.
   // This is a wall-clock fact about the uplink, not Board Time.
   const syncedAt = new Date(telemetryQuery.dataUpdatedAt);
@@ -220,7 +205,7 @@ export default function Dashboard() {
           <span style={{ marginLeft: 10 }}>
             {topIncident.id}: {topIncident.title}
           </span>
-          <span className="alert-time">{fmtDate(topIncident.timestamp)}</span>
+          <span className="alert-time">{formatInstant(topIncident.timestamp)}</span>
         </div>
       )}
 
@@ -274,10 +259,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className={'tile ' + TONE_CLASS[resupplyTone]}>
+        <div className={'tile ' + TONE_CLASS[resupply.tone]}>
           <div className="tile-label">Next Resupply</div>
-          <div className="tile-value" style={{ fontSize: 24 }}>{resupplyLabel}</div>
-          <div className="tile-sub">{fmtDate(station.nextResupply)}</div>
+          <div className="tile-value" style={{ fontSize: 24 }}>{resupply.label}</div>
+          <div className="tile-sub">{formatInstant(station.nextResupply)}</div>
         </div>
 
         <div className={'tile ' + TONE_CLASS[crewRestTone]}>
@@ -294,7 +279,7 @@ export default function Dashboard() {
           <div className="tile-value" style={{ fontSize: 20 }}>
             α {shifts['alpha'] || 0} · β {shifts['beta'] || 0} · γ {shifts['gamma'] || 0}
           </div>
-          <div className="tile-sub">commissioned {fmtDate(station.commissioned + 'T00:00:00Z')}</div>
+          <div className="tile-sub">commissioned {formatDay(station.commissioned)}</div>
         </div>
       </div>
     </div>

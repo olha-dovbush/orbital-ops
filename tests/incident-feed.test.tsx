@@ -154,7 +154,7 @@ test('renders each row with id, title, affected system, timestamp, and open stat
   expect(row).toContain('INC-2107');
   expect(row).toContain('CO2 scrubber cartridge 3 efficiency below 80%');
   expect(row).toContain('life-support');
-  expect(row).toContain('Jul 11, 07:42 UTC');
+  expect(row).toContain('Jul 11 07:42z');
   expect(row).toContain('open');
 });
 
