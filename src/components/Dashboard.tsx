@@ -3,7 +3,7 @@ import { useTelemetry } from '../hooks/useTelemetry';
 import { useCrew } from '../hooks/useCrew';
 import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
-import { formatDay, formatInstant, isSameDay, timeUntil } from '../domain/mission-time';
+import { formatDay, formatInstant, isSameDay, timeUntil } from '../domain/board-time';
 import {
   CREW_REST_HOURS,
   HULL_INTEGRITY,

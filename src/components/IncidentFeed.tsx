@@ -3,7 +3,7 @@ import { useIncidents } from '../hooks/useIncidents';
 import { sortIncidents } from '../domain/incidents';
 import PanelNotice from './PanelNotice';
 import { SEVERITY_CLASS } from '../config';
-import { formatInstant } from '../domain/mission-time';
+import { formatInstant } from '../domain/board-time';
 
 // Incident feed. The fetch, the retry budget, and the loading/error chrome all
 // belong to shared code now; what is left here is the feed itself.

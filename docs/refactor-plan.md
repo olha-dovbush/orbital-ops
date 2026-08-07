@@ -109,7 +109,7 @@ status pill, and the alert banner all take their tint from it.
 
 ### 5 — Domain
 Five modules with colocated tests: `station-status.ts`, `telemetry.ts`,
-`incidents.ts`, `crew.ts`, `mission-time.ts`. `src/utils.ts` is deleted —
+`incidents.ts`, `crew.ts`, `board-time.ts`. `src/utils.ts` is deleted —
 every survivor has a home. `formatInstant` and `formatDay` replace the two
 diverged date formatters (and stop rendering a fake midnight for the
 commissioning date).

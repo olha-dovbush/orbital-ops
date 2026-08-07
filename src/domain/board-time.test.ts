@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { formatDay, formatInstant, isSameDay, timeUntil } from './mission-time';
+import { formatDay, formatInstant, isSameDay, timeUntil } from './board-time';
 
 // Board Time is an argument in every one of these tests: no frozen timers, no
 // stubbed clock. A function that took the wall clock could not be tested this
