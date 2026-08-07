@@ -1,79 +1,57 @@
-import { useEffect, useState } from 'react';
-import { getData } from '../api/client';
+import { useStation } from '../hooks/useStation';
+import { useTelemetry } from '../hooks/useTelemetry';
+import { useCrew } from '../hooks/useCrew';
+import { useIncidents } from '../hooks/useIncidents';
+import { sortIncidents } from '../domain/incidents';
 
 // The main mission control view. Started small in 2034. It has... grown.
 // Header, summary tiles, alert banner, resupply countdown, shift board --
 // everything lives here because it was "just one more tile" every sprint.
+//
+// The board reads all four resources, so unlike the panels it gates on the whole
+// set: a tile grid missing a feed is worse than no grid.
+
+const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
 
 export default function Dashboard() {
-  const [station, setStation] = useState<any>(null);
-  const [telemetry, setTelemetry] = useState<any>(null);
-  const [crew, setCrew] = useState<any>(null);
-  const [incidents, setIncidents] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [lastSync, setLastSync] = useState('');
-  const [tick, setTick] = useState(0);
+  const stationQuery = useStation();
+  const telemetryQuery = useTelemetry();
+  const crewQuery = useCrew();
+  const incidentsQuery = useIncidents();
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      getData('station'),
-      getData('telemetry'),
-      getData('crew'),
-      getData('incidents')
-    ])
-      .then((results) => {
-        if (cancelled) return;
-        setStation(results[0]);
-        setTelemetry(results[1]);
-        setCrew(results[2]);
-        setIncidents(results[3]);
-        const now = new Date();
-        const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
-        setLastSync(pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(String(err && err.message ? err.message : err));
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tick]);
+  const queries = [stationQuery, telemetryQuery, crewQuery, incidentsQuery];
+  const reason = queries.find((query) => query.isError)?.error;
 
-  useEffect(() => {
-    // poll every 5 seconds -- keep in sync with the other pollers (see CrewPanel)
-    const id = setInterval(() => {
-      setTick(tick + 1);
-    }, 5000);
-    return () => clearInterval(id);
-  }, []);
+  // A feed that has failed past its retry budget takes the whole board, even
+  // though a reading is still cached: tiles frozen at their last good values with
+  // nothing to say so are how a dead uplink reads as a calm station. A refresh
+  // merely in flight is not a failure and never reaches here — the board renders
+  // its last good reading straight through one. Retry re-requests only what
+  // failed, so a Reference Data feed that answered is still read once per open.
+  if (reason) {
+    return (
+      <div className="dashboard dashboard-error">
+        <h1>⚠ Uplink lost</h1>
+        <p>{reason.message}</p>
+        <button onClick={() => queries.filter((query) => query.isError).forEach((query) => void query.refetch())}>
+          Retry uplink
+        </button>
+      </div>
+    );
+  }
 
-  if (loading && !station) {
+  const station = stationQuery.data;
+  const telemetry = telemetryQuery.data;
+  const crew = crewQuery.data;
+  const incidents = incidentsQuery.data;
+
+  if (!station || !telemetry || !crew || !incidents) {
     return (
       <div className="dashboard dashboard-loading">
         <div className="spinner" />
         <p>Establishing uplink to ISS Kruger-60…</p>
       </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard dashboard-error">
-        <h1>⚠ Uplink lost</h1>
-        <p>{error}</p>
-        <button onClick={() => setTick(tick + 1)}>Retry uplink</button>
-      </div>
-    );
-  }
-
-  if (!station || !telemetry || !crew || !incidents) {
-    return null;
   }
 
   // ---- inline status computation -------------------------------------------
@@ -184,29 +162,21 @@ export default function Dashboard() {
     sleepClass = 'tile-warn';
   }
 
-  // ---- most urgent incident (sorting inline, again) ---------------------------
-  const unresolved = [];
-  for (let i = 0; i < incidents.items.length; i++) {
-    if (!incidents.items[i].resolved) {
-      unresolved.push(incidents.items[i]);
-    }
-  }
-  unresolved.sort((a: any, b: any) => {
-    const rank: Record<string, number> = { critical: 0, warning: 1, info: 2 };
-    const ra = rank[a.severity] !== undefined ? rank[a.severity] : 3;
-    const rb = rank[b.severity] !== undefined ? rank[b.severity] : 3;
-    if (ra !== rb) return ra - rb;
-    return a.timestamp < b.timestamp ? 1 : -1;
-  });
+  // ---- most urgent incident ---------------------------------------------------
+  const unresolved = sortIncidents(incidents.items.filter((item) => !item.resolved));
   const topIncident = unresolved.length > 0 ? unresolved[0] : null;
 
   // date formatting, local copy (utils.ts has one too but it formats differently)
   const fmtDate = (iso: string) => {
     const d = new Date(iso);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
     return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + 'z';
   };
+
+  // When the newest Live Resource reading landed, in the operator's own clock.
+  // This is a wall-clock fact about the uplink, not Board Time.
+  const syncedAt = new Date(telemetryQuery.dataUpdatedAt);
+  const lastSync = pad(syncedAt.getHours()) + ':' + pad(syncedAt.getMinutes()) + ':' + pad(syncedAt.getSeconds());
 
   return (
     <div className="dashboard">
