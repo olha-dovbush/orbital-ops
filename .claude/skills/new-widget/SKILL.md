@@ -1,8 +1,7 @@
 ---
 name: new-widget
-description: Scaffold a new dashboard widget as one vertical slice.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm run typecheck:*), Bash(npm run lint:*), Bash(npm run test:*), Bash(npm run validate:*), Bash(npx vitest run:*)
-disable-model-invocation: true
+description: Scaffold a new dashboard widget as one vertical slice — fixture, payload type, hook, domain module with colocated tests, component, and its line in the grid. Use when asked to add a widget, add a panel, add a tile, or surface a new resource on the dashboard.
+allowed-tools: Read, Write, Edit, Bash(npx vitest run:*), Bash(npm run validate:*)
 ---
 
 # New widget
@@ -57,15 +56,15 @@ In table order, because each file compiles against the one above it.
 
 1. **Register the payload.** Add the interface, then the `ApiResources` entry
    that binds the resource path to it. Every field the fixture carries is typed.
-   Done when `npm run typecheck` passes.
+   Done when the registry entry is what makes `getData('<resource>')` compile.
 2. **Name the numbers.** Every threshold and interval the approved reading needs
    goes in `src/config.ts` with a comment saying what it means. Done when no
    number is left to write at a call site.
 3. **Write the reading.** A pure module in `src/domain/`. Done when every band it
    applies reads from `src/config.ts`.
 4. **Test the reading.** Colocated `*.test.ts`, one `test()` per rule. Done when
-   every rule in the template's test list has a test and `npm run test:coverage`
-   is green.
+   every rule in the template's test list has a test and
+   `npx vitest run src/domain/<concept>.test.ts` is green.
 5. **Wrap the resource.** One thin `useQuery` per resource. The approved cadence
    decides the options: a Live Resource takes `refetchInterval`, Reference Data
    takes `staleTime`. Done when the hook is one `useQuery` call and its options.
