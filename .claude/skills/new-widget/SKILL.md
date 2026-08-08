@@ -1,7 +1,7 @@
 ---
 name: new-widget
 description: Scaffold a new dashboard widget as one vertical slice.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm run typecheck:*), Bash(npm run lint:*), Bash(npm run validate:*), Bash(npx vitest run:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(npm run typecheck:*), Bash(npm run lint:*), Bash(npm run test:*), Bash(npm run validate:*), Bash(npx vitest run:*)
 disable-model-invocation: true
 ---
 
@@ -10,13 +10,10 @@ disable-model-invocation: true
 A widget is a **slice**: one payload type, one hook, one domain module, one
 component, one line in the grid. Build the slice in the order below.
 
-No widget-specific code lives in this file. The annotated template for every
-file of a slice is [`references/widget-template.md`](references/widget-template.md) —
-read it before step 2, copy its structure and the reasoning in its comments, and
-name everything from the spec's own vocabulary.
-
-Where each kind of file belongs is settled in `CLAUDE.md`; the vocabulary the
-spec uses is in `CONTEXT.md`. Read both before naming anything.
+The annotated template for every file of a slice is
+[`references/widget-template.md`](references/widget-template.md) — read it before
+step 2 and copy the reasoning in its comments. Name everything from the
+vocabulary in `CONTEXT.md`.
 
 ## 1. Preflight
 
@@ -64,21 +61,19 @@ In table order, because each file compiles against the one above it.
 2. **Name the numbers.** Every threshold and interval the approved reading needs
    goes in `src/config.ts` with a comment saying what it means. Done when no
    number is left to write at a call site.
-3. **Write the reading.** A pure module in `src/domain/`, under the rules
-   `CLAUDE.md` sets for that folder. Done when every band it applies reads from
-   `src/config.ts`.
+3. **Write the reading.** A pure module in `src/domain/`. Done when every band it
+   applies reads from `src/config.ts`.
 4. **Test the reading.** Colocated `*.test.ts`, one `test()` per rule. Done when
-   every threshold has a test at its boundary and either side of it, the
-   degenerate payload — empty, zero, absent — has one, and
-   `npm run test:coverage` is green.
+   every rule in the template's test list has a test and `npm run test:coverage`
+   is green.
 5. **Wrap the resource.** One thin `useQuery` per resource. The approved cadence
    decides the options: a Live Resource takes `refetchInterval`, Reference Data
-   takes `staleTime`. Done when the hook holds no fetch, no retry, and no state.
+   takes `staleTime`. Done when the hook is one `useQuery` call and its options.
 6. **Compose the widget.** The container calls the hook, gates on it with
-   `PanelNotice`, and passes typed props down. Done when it holds no fetch and no
-   arithmetic the domain module could own.
-7. **Hang it on the board.** One line in the grid in `src/App.tsx`. Done when the
-   widget renders inside the existing `QueryClientProvider`.
+   `PanelNotice`, and passes typed props down. Done when every number it shows
+   comes from the domain module.
+7. **Hang it on the board.** One line in the grid in `src/App.tsx`. Done when
+   `src/App.tsx` imports the widget and renders it inside `<div className="grid">`.
 
 ## 3. Validate
 
