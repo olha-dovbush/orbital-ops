@@ -7,15 +7,15 @@ The eight files of a slice, annotated. Placeholders:
 - `<concept>` — the domain concept, kebab-case: `src/domain/<concept>.ts`
 - `<Widget>` — the component, PascalCase
 
-Copy the structure and the reasoning in the comments. Do not copy the nouns —
-`fuel`, `crew`, and `telemetry` are examples, not a vocabulary.
+Copy the structure and the reasoning in the comments, and name everything from
+the spec's own vocabulary in `CONTEXT.md` — `fuel`, `crew`, and `telemetry` here
+are examples, not a vocabulary.
 
 ---
 
 ## 1. `public/api/<resource>.json` — the fixture
 
-Read-only, and the PreToolUse hook blocks writes to it. The user places it. Read
-it before typing it: the payload on disk is the contract, and a field the
+Read it before typing it: the payload on disk is the contract, and a field the
 fixture does not carry is a field the widget cannot read.
 
 Every payload the board serves carries an `updated` instant. Type it.
@@ -27,8 +27,8 @@ Every payload the board serves carries an `updated` instant. Type it.
 ```ts
 export interface <Resource>Item {
   id: string;
-  // …one field per key the fixture actually carries. No `any`, no optional
-  // field the fixture always sends.
+  // …one field per key the fixture actually carries. A field the fixture always
+  // sends is required, not optional.
 }
 
 export interface <Resource>Response {
@@ -68,7 +68,7 @@ cadence, and a new cadence is a decision — say so rather than inventing one.
 ## 4. `src/domain/<concept>.ts` — the reading
 
 ```ts
-// One line on what this module is responsible for. No React, no clock reads.
+// One line on what this module is responsible for.
 
 import { <CONCEPT>_<UNIT>, type Tone } from '../config';
 import type { <Resource>Item } from '../api/types';
@@ -80,8 +80,9 @@ export interface <Concept> {
 }
 
 /**
- * What the reading means and why the bands sit where they do. An instant is an
- * argument — `boardTime: string` — never `Date.now()`, so the test can pin it.
+ * What the reading means and why the bands sit where they do. Take
+ * `boardTime: string` only when the reading reads a clock — most do not — and
+ * then the test can pin the instant.
  */
 export function <concept>(items: <Resource>Item[], boardTime: string): <Concept> {
   // Guard the degenerate payload here, once, rather than at every call site.
@@ -124,7 +125,7 @@ One `test()` per rule. What earns a test:
   its floor.
 - **Purity** — call the function, then assert the input is unchanged.
 
-Snapshot spam is not coverage. Assert the value, not the shape of the object.
+Assert the value, not the shape of the object.
 
 ---
 
@@ -156,9 +157,8 @@ Reference Data reads once instead — swap `refetchInterval` for
 `staleTime: REFERENCE_STALE_TIME_MS` and say in the comment why the reading
 never goes stale.
 
-Nothing else belongs in this file: no `useState`, no `useEffect`, no
-transformation of the payload. A hook that shapes data is a domain module
-hiding in the wrong folder.
+This file holds one `useQuery` call and its options. A hook that shapes data is
+a domain module hiding in the wrong folder.
 
 ---
 
@@ -205,9 +205,6 @@ export default function <Widget>() {
 Gating on the panel's own query keeps one dead feed inside its own section of
 the board. Colour comes from `TONE_CLASS`, never a hex code at the call site.
 
-`src/components/` is flat: a presentational child of this widget is a sibling
-file taking typed props, not a nested folder.
-
 Board Time is the payload's own `updated` instant, never the wall clock — see
 `docs/decisions/board-time.md`. Pass it down as a prop.
 
@@ -231,4 +228,3 @@ One import, one line. The widget mounts inside the existing
 
 - `npm run validate` is green — lint, typecheck, coverage, duplication, structure.
 - The slice reads its numbers from `src/config.ts`, not from its own source.
-- No lint rule was suppressed. The caps are the contract; restructure to fit them.
