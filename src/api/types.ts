@@ -63,6 +63,20 @@ export interface IncidentsResponse {
   items: Incident[];
 }
 
+export interface FuelTank {
+  id: string;
+  type: string;
+  capacityKg: number;
+  currentKg: number;
+}
+
+export interface FuelResponse {
+  updated: string;
+  tanks: FuelTank[];
+  /** Station-wide burn, pooled across every propellant type — the feed reports no split. */
+  dailyConsumptionKg: number;
+}
+
 /**
  * The resource registry: every fetchable path mapped to the response it returns.
  * `getData` is generic over these keys, so a resource can only produce its own
@@ -73,4 +87,5 @@ export interface ApiResources {
   telemetry: TelemetryResponse;
   crew: CrewResponse;
   incidents: IncidentsResponse;
+  fuel: FuelResponse;
 }

@@ -36,3 +36,13 @@ _Avoid_: now, current time, mission time, wall clock
 Average sleep hours across the roster. Changing, but never actionable — it is
 Reference Data, not a Live Resource.
 _Avoid_: fatigue, sleep debt
+
+**Fuel Reserve**:
+Propellant currently aboard, summed across every tank whatever its type. Falling
+by the day rather than by the reading, so it is Reference Data.
+_Avoid_: fuel level, fuel remaining, propellant load
+
+**Fuel Endurance**:
+How many days the Fuel Reserve lasts at the reported daily consumption rate. A
+count of days, never an instant — it is not measured from Board Time.
+_Avoid_: days of fuel, autonomy, range, burn time

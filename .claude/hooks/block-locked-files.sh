@@ -8,6 +8,11 @@ file=$(jq -r '.tool_input.file_path // empty')
 rel="${file#"$root"/}"
 
 case "$rel" in
+  public/api/fuel.json)
+    # The one exception CLAUDE.md carves out, scoped to *creating* the file.
+    # Once it exists it is guarded like the rest of the fixture set.
+    [ -e "$root/$rel" ] || exit 0
+    reason="public/api/fuel.json already exists. The exception covers creating it, not editing it." ;;
   public/api/*)
     reason="public/api/** is a read-only fixture set. Change what reads it, not it." ;;
   RUBRIC.md|ASSIGNMENT.md)

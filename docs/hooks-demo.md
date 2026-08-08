@@ -29,6 +29,43 @@ message is what the agent reads instead of a success. The same script guards
 `RUBRIC.md`, `ASSIGNMENT.md`, and the locked configs, each with its own reason;
 the reason is the useful half, because "blocked" alone just invites a retry.
 
+## PreToolUse — the one exception, scoped
+
+Exercise 4 needs `public/api/fuel.json`, which the block above refuses. The
+guard was widened by exactly one path, and only far enough to **create** it:
+
+```bash
+public/api/fuel.json)
+  # The one exception CLAUDE.md carves out, scoped to *creating* the file.
+  # Once it exists it is guarded like the rest of the fixture set.
+  [ -e "$root/$rel" ] || exit 0
+  reason="public/api/fuel.json already exists. The exception covers creating it, not editing it." ;;
+```
+
+The write went through once. Editing the file afterwards is refused again, with
+its own reason rather than the generic fixture one:
+
+```
+● Update(public/api/fuel.json)
+  ⎿  Error: PreToolUse:Edit hook error:
+     ["$CLAUDE_PROJECT_DIR"/.claude/hooks/block-locked-files.sh]:
+     BLOCKED: public/api/fuel.json
+
+     public/api/fuel.json already exists. The exception covers creating it,
+     not editing it.
+```
+
+That is the whole widening: one path, one direction, and every other path under
+`public/api/` keeps the refusal it had. The alternative — disabling the hook for
+a turn and re-enabling it — leaves nothing behind to say the exception was
+deliberate, and nothing to stop it quietly becoming "this fixture is editable".
+
+**The honest limit.** The matcher is `Edit|Write`. A `cat > public/api/…`
+heredoc in a Bash call never reaches this script and is not blocked by anything.
+That is a property of the guard's matcher, not a workaround anyone should reach
+for; a `PreToolUse` entry matching `Bash` would be the fix, and it is not in
+scope here.
+
 ## PostToolUse — the red suite
 
 Provoked deliberately: `pad()` in `src/domain/board-time.ts` was changed to drop

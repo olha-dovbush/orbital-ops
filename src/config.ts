@@ -44,6 +44,16 @@ export const CREW_REST_HOURS = { WARN: 7, BAD: 6 } as const;
 /** Days until the next resupply. */
 export const RESUPPLY_DAYS = { WARN: 14, BAD: 7 } as const;
 
+/**
+ * Fuel Endurance: days the Fuel Reserve lasts at the reported burn. Reasoned off
+ * the resupply window rather than sharing it — a resupply is raised at
+ * `RESUPPLY_DAYS.WARN`, so an endurance under 14 days means running dry before a
+ * resupply that has only just been flagged, and 30 leaves one full cycle of
+ * margin. "When is resupply due" and "when do we run dry" are two questions;
+ * tying them to one pair of numbers breaks the moment either moves.
+ */
+export const FUEL_ENDURANCE_DAYS = { WARN: 30, BAD: 14 } as const;
+
 // ---- scalars ---------------------------------------------------------------
 
 /** Rated power output, the denominator of the power budget percentage. */

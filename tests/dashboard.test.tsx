@@ -75,6 +75,15 @@ const payloads: ApiResources = {
       { id: 'INC-2101', severity: 'info', system: 'crew', title: 'Quarterly medical checks completed for beta shift', timestamp: '2036-07-09T09:30:00Z', resolved: true, assignee: 'med-04' },
       { id: 'INC-2100', severity: 'warning', system: 'life-support', title: 'Water reclamation yield 91% (target 93%)', timestamp: '2036-07-08T16:12:00Z', resolved: false, assignee: 'med-04' }
     ]
+  },
+  fuel: {
+    updated: '2036-07-11T09:00:00Z',
+    tanks: [
+      { id: 'main-a', type: 'hydrazine', capacityKg: 1200, currentKg: 830 },
+      { id: 'main-b', type: 'hydrazine', capacityKg: 1200, currentKg: 764 },
+      { id: 'rcs', type: 'cold-gas', capacityKg: 300, currentKg: 211 }
+    ],
+    dailyConsumptionKg: 14.2
   }
 };
 
