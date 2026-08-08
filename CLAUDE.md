@@ -40,8 +40,8 @@ Where things go:
   — an instant is always an argument.
 - `src/config.ts` — every threshold, interval, and domain→token mapping. A number
   that means something belongs here, not at its call site.
-- `src/components/` — flat. Queries only in the four section containers
-  (`Dashboard` and the three panels); everything below takes typed props.
+- `src/components/` — flat. Queries live in section containers; everything
+  below them takes typed props.
 - `tests/` — rendering tests. They stub `global.fetch`, never `src/api/client`.
 
 ## Deletion policy
