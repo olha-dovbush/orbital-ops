@@ -197,6 +197,12 @@ body {
   grid-column: 1 / -1;
 }
 
+/* The first panel takes a whole row, so an even-numbered last panel is the odd
+   one out of the pairs below it. Widen it rather than leave a dead half-row. */
+.grid > :last-child:nth-child(even) {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 800px) {
   .grid {
     grid-template-columns: 1fr;

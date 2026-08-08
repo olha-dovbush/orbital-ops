@@ -62,6 +62,14 @@ export const POWER_RATED_KW = 90;
 /** Below this the station is DEGRADED, whatever the budget percentage says. */
 export const POWER_FLOOR_KW = 50;
 
+/**
+ * How near a whole day an endurance has to land to count as that whole day.
+ * Masses and burn rates are decimals, and a binary sum that comes out at
+ * 7.999999999999999 is eight days of flight — flooring it raw costs the board a
+ * day it has. Far wider than float error, far narrower than any real part-day.
+ */
+export const FUEL_DAY_TOLERANCE = 1e-9;
+
 /** How many readings back a trend arrow compares against. */
 export const TREND_LOOKBACK = 4;
 

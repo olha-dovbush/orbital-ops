@@ -1,7 +1,7 @@
 // Pure propellant rules. No React, no clock reads — Fuel Endurance is a count of
 // days, not a measurement from Board Time.
 
-import { FUEL_ENDURANCE_DAYS, type Tone } from '../config';
+import { FUEL_DAY_TOLERANCE, FUEL_ENDURANCE_DAYS, type Tone } from '../config';
 import type { FuelTank } from '../api/types';
 
 /** The reading the panel renders: the pooled reserve, the days it buys, and how hard to ignore. */
@@ -19,7 +19,10 @@ export interface FuelEndurance {
  * see docs/decisions/fuel-pooling.md.
  *
  * Days are floored: the partial day at the end is not a day of flight, and the
- * board must never promise one it does not have. A rate of zero or less means
+ * board must never promise one it does not have — but a quotient that misses a
+ * whole day only by float error is that whole day, and gets snapped up to it
+ * before the floor, so binary arithmetic never costs the board a day of flight.
+ * A rate of zero or less means
  * nothing is being consumed, so the endurance is absent rather than infinite,
  * and absent is not an alarm. An empty tank collection needs no guard of its
  * own — it sums to zero, divides to zero days, and lands in the worst band,
@@ -30,7 +33,10 @@ export function fuelEndurance(tanks: FuelTank[], dailyConsumptionKg: number): Fu
 
   if (dailyConsumptionKg <= 0) return { reserveKg, days: null, tone: 'ok' };
 
-  const days = Math.floor(reserveKg / dailyConsumptionKg);
+  const exactDays = reserveKg / dailyConsumptionKg;
+  const wholeDays = Math.round(exactDays);
+  const days =
+    Math.abs(exactDays - wholeDays) < FUEL_DAY_TOLERANCE ? wholeDays : Math.floor(exactDays);
 
   if (days < FUEL_ENDURANCE_DAYS.BAD) return { reserveKg, days, tone: 'bad' };
   return { reserveKg, days, tone: days < FUEL_ENDURANCE_DAYS.WARN ? 'warn' : 'ok' };

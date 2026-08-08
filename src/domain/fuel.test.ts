@@ -47,6 +47,14 @@ test('floors the day count — a part-day of flight is not a day of flight', () 
   expect(fuelEndurance([tank({ currentKg: 59 })], 2).days).toBe(29);
 });
 
+test('a day count a float wobble short of a whole day is still that whole day', () => {
+  // 0.1 + 0.7 sums to 0.7999999999999999 in binary, so the raw floor of the
+  // quotient reads seven. The reserve buys eight days and the board says eight.
+  const reading = fuelEndurance([tank({ currentKg: 0.1 }), tank({ id: 'rcs', currentKg: 0.7 })], 0.1);
+
+  expect(reading.days).toBe(8);
+});
+
 test('nothing being consumed leaves the endurance absent rather than infinite', () => {
   const reading = fuelEndurance([tank({ currentKg: 830 })], 0);
 
