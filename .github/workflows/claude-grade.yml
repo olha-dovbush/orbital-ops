@@ -15,17 +15,18 @@ jobs:
     name: Rubric grading
     runs-on: ubuntu-latest
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      ANTHROPIC_BASE_URL: https://api.deepseek.com/anthropic
     steps:
       - name: Check for API key
         id: key
         run: |
-          if [ -n "$ANTHROPIC_API_KEY" ]; then
+          if [ -n "$DEEPSEEK_API_KEY" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "### Claude grading skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "Add an \`ANTHROPIC_API_KEY\` repository secret to enable automated rubric grading (see README)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Add a \`DEEPSEEK_API_KEY\` repository secret to enable automated rubric grading (see README)." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - uses: actions/checkout@v4
@@ -43,7 +44,7 @@ jobs:
         if: steps.key.outputs.present == 'true'
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ secrets.DEEPSEEK_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             You are grading a student submission for the Orbital Ops agentic
@@ -71,7 +72,7 @@ jobs:
                containing: a score table per rubric section, the verdict, and the
                top 3 concrete improvements. Use markdown. Be encouraging but honest.
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr comment:*),Bash(cat:*),Bash(ls:*)"
+            --model deepseek-reasoner --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr comment:*),Bash(cat:*),Bash(ls:*)"
 
       - name: Set commit status from verdict
         if: steps.key.outputs.present == 'true'

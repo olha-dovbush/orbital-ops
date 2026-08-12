@@ -55,9 +55,9 @@ and posts a scored review comment plus a `claude-grade` commit status.
 
 Enable it once:
 
-1. Get an Anthropic API key.
+1. Get a DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com).
 2. In your repo: **Settings → Secrets and variables → Actions → New repository secret**.
-3. Name: `ANTHROPIC_API_KEY`, value: your key.
+3. Name: `DEEPSEEK_API_KEY`, value: your key.
 
 Without the secret, the workflow skips politely and the deterministic checks
 still work.
