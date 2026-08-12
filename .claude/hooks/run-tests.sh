@@ -17,7 +17,10 @@ esac
 # under DOM. Cap it here only — a human running `npm test` still gets the full dump.
 export DEBUG_PRINT_LIMIT=200
 
-if ! output=$(cd "$root" && npm test 2>&1); then
+# --related walks the module graph from the edited file and runs only the tests
+# that depend on it, transitively. Cheap on every keystroke; `npm run validate`
+# (full suite, coverage gate included) still runs before commit.
+if ! output=$(cd "$root" && npx vitest related "$file" --run 2>&1); then
   # Runaway guard only. With the dump capped a failure costs ~13 lines, so 400 holds
   # a ~30-failure blowup; a 15-failure run at 200 was already losing the first four.
   lines=$(printf '%s\n' "$output" | wc -l)

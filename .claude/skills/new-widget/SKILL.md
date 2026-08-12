@@ -1,7 +1,7 @@
 ---
 name: new-widget
 description: Scaffold a new dashboard widget as one vertical slice — fixture, payload type, hook, domain module with colocated tests, component, and its line in the grid. Use when asked to add a widget, add a panel, add a tile, or surface a new resource on the dashboard.
-allowed-tools: Read, Write, Edit, Bash(npx vitest run:*), Bash(npm run validate:*)
+allowed-tools: Read, Write, Edit, Bash(npx vitest run:*), Bash(npm run validate)
 ---
 
 # New widget
