@@ -1,87 +1,35 @@
-import { useEffect, useState } from 'react';
-import { getData } from '../api/client';
+import { useState } from 'react';
+import { useTelemetry } from '../hooks/useTelemetry';
+import PanelNotice from './PanelNotice';
+import { latest, thin } from '../domain/telemetry';
+import { O2, TELEMETRY_METRICS } from '../config';
+import type { TelemetryMetric } from '../api/types';
 
-// Telemetry sparklines. Fetch logic copied from CrewPanel. This copy
-// forgot the cancellation guard on unmount -- nobody has noticed yet
-// because the panel never unmounts.
-
-// same value as Dashboard's POLL_INTERVAL; keep them in sync by hand
-const REFRESH_MS = 5000;
+// Telemetry sparklines. Loading, retries, and cancellation on unmount belong to
+// the query layer now; what is left here is the chart.
 
 export default function TelemetryChart() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [selected, setSelected] = useState('o2');
+  const telemetry = useTelemetry();
+  const [selected, setSelected] = useState<TelemetryMetric>('o2');
 
-  useEffect(() => {
-    setLoading(true);
-    setError('');
-    getData('telemetry')
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (retryCount < 3) {
-          setTimeout(() => setRetryCount(retryCount + 1), 1000);
-        } else {
-          setError(String(err && err.message ? err.message : err));
-          setLoading(false);
-        }
-      });
-  }, [retryCount]);
+  if (telemetry.isPending) {
+    return <PanelNotice title="Telemetry" kind="loading" message="Loading telemetry…" />;
+  }
 
-  if (loading) {
+  if (telemetry.isError) {
     return (
-      <section className="panel">
-        <h2>Telemetry</h2>
-        <div className="panel-loading">
-          <div className="spinner" />
-          <p>Loading telemetry…</p>
-        </div>
-      </section>
+      <PanelNotice
+        title="Telemetry"
+        kind="error"
+        message={telemetry.error.message}
+        onRetry={() => void telemetry.refetch()}
+      />
     );
   }
 
-  if (error) {
-    return (
-      <section className="panel">
-        <h2>Telemetry</h2>
-        <div className="panel-error">
-          <p>⚠ {error}</p>
-          <button onClick={() => setRetryCount(0)}>Retry</button>
-        </div>
-      </section>
-    );
-  }
-
-  if (!data) {
-    return null;
-  }
-
+  const data = telemetry.data;
   const series = data.series[selected];
-  let points = series.points;
-
-  // downsample to at most 12 points so the sparkline stays readable
-  // (utils.ts has downsampleTelemetry but this predates it)
-  if (points.length > 12) {
-    const bucketSize = points.length / 12;
-    const reduced: number[] = [];
-    for (let i = 0; i < 12; i++) {
-      const start = Math.floor(i * bucketSize);
-      const end = Math.floor((i + 1) * bucketSize);
-      let sum = 0;
-      let count = 0;
-      for (let j = start; j < end && j < points.length; j++) {
-        sum += points[j];
-        count++;
-      }
-      reduced.push(count > 0 ? sum / count : points[start]);
-    }
-    points = reduced;
-  }
+  const points = thin(series.points);
 
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -97,15 +45,15 @@ export default function TelemetryChart() {
     })
     .join(' ');
 
-  // threshold breach computed during render, hardcoded floor again
-  const latest = points[points.length - 1];
-  const breach = selected === 'o2' && latest < 19.5;
+  // The breach marker reads the same O2 Floor the board enforces.
+  const latestPoint = latest(points);
+  const breach = selected === 'o2' && latestPoint < O2.FLOOR;
 
   return (
     <section className="panel">
       <h2>Telemetry</h2>
       <div className="chart-tabs">
-        {Object.keys(data.series).map((key) => (
+        {TELEMETRY_METRICS.map((key) => (
           <button
             key={key}
             className={key === selected ? 'chart-tab chart-tab-active' : 'chart-tab'}
@@ -117,11 +65,11 @@ export default function TelemetryChart() {
       </div>
       <div className="chart-body">
         <svg viewBox={'0 0 ' + w + ' ' + h} className="sparkline" preserveAspectRatio="none">
-          <polyline points={coords} fill="none" stroke={breach ? '#ff4d4d' : '#4da3ff'} strokeWidth="2" />
+          <polyline points={coords} className={breach ? 'sparkline-plot sparkline-plot-breach' : 'sparkline-plot'} fill="none" strokeWidth="2" />
         </svg>
         <div className="chart-stats">
           <span>
-            latest <strong>{latest.toFixed(1)}</strong> {series.unit}
+            latest <strong>{latestPoint.toFixed(1)}</strong> {series.unit}
           </span>
           <span>min {min.toFixed(1)}</span>
           <span>max {max.toFixed(1)}</span>

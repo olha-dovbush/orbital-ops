@@ -1,80 +1,35 @@
-import { useEffect, useState } from 'react';
-import { getData } from '../api/client';
+import { useCrew } from '../hooks/useCrew';
+import { sortRoster } from '../domain/crew';
+import PanelNotice from './PanelNotice';
 
-// Crew roster panel. The fetch logic here was copied from Dashboard,
-// then tweaked to add retries. TelemetryChart and IncidentFeed have
-// their own copies too. They have all drifted apart a little.
+// Crew roster. The fetch, the retry budget, and the loading/error chrome all
+// belong to shared code now; what is left here is the roster itself.
 
 export default function CrewPanel() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+  const crew = useCrew();
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError('');
-    getData('crew')
-      .then((result) => {
-        if (cancelled) return;
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        if (retryCount < 3) {
-          setTimeout(() => setRetryCount(retryCount + 1), 1000);
-        } else {
-          setError(String(err && err.message ? err.message : err));
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [retryCount]);
+  if (crew.isPending) {
+    return <PanelNotice title="Crew" kind="loading" message="Loading crew roster…" />;
+  }
 
-  if (loading) {
+  if (crew.isError) {
     return (
-      <section className="panel">
-        <h2>Crew</h2>
-        <div className="panel-loading">
-          <div className="spinner" />
-          <p>Loading crew roster…</p>
-        </div>
-      </section>
+      <PanelNotice
+        title="Crew"
+        kind="error"
+        message={crew.error.message}
+        onRetry={() => void crew.refetch()}
+      />
     );
   }
-
-  if (error) {
-    return (
-      <section className="panel">
-        <h2>Crew</h2>
-        <div className="panel-error">
-          <p>⚠ {error}</p>
-          <button onClick={() => setRetryCount(0)}>Retry</button>
-        </div>
-      </section>
-    );
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  const sorted = [...data.members].sort((a: any, b: any) => {
-    if (a.onDuty !== b.onDuty) return a.onDuty ? -1 : 1;
-    return a.name < b.name ? -1 : 1;
-  });
 
   return (
     <section className="panel">
       <h2>Crew</h2>
       <ul className="crew-list">
-        {sorted.map((m: any) => (
+        {sortRoster(crew.data.members).map((m) => (
           <li key={m.id} className={m.onDuty ? 'crew-row crew-on' : 'crew-row'}>
-            <span className="crew-dot" style={{ background: m.onDuty ? '#3ddc84' : '#8892a6' }} />
+            <span className={m.onDuty ? 'crew-dot crew-dot-on' : 'crew-dot'} />
             <div className="crew-main">
               <span className="crew-name">{m.name}</span>
               <span className="crew-role">{m.role} · shift {m.shift}</span>

@@ -1,8 +1,10 @@
-// Fetch wrapper for the station API.
-// TODO: someone should type this properly some day.
+// Fetch wrapper for the station API. Generic over the resource registry, so
+// requesting one resource can only produce that resource's response.
 
-export async function getData(path: string): Promise<any> {
-  const url = '/api/' + path + '.json';
+import type { ApiResources } from './types';
+
+export async function getData<K extends keyof ApiResources>(resource: K): Promise<ApiResources[K]> {
+  const url = '/api/' + resource + '.json';
   // simulated network latency so loading states are visible
   await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 200));
   if (typeof window !== 'undefined' && window.location.search.indexOf('fail=1') !== -1) {
@@ -12,10 +14,5 @@ export async function getData(path: string): Promise<any> {
   if (!res.ok) {
     throw new Error('Request failed: ' + res.status);
   }
-  const data = await res.json();
-  return data as any;
-}
-
-export function getDataOrNull(path: string): Promise<any> {
-  return getData(path).catch(() => null);
+  return (await res.json()) as ApiResources[K];
 }

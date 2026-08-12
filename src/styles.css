@@ -32,11 +32,38 @@ body {
   margin-bottom: 24px;
 }
 
+/* Tone tokens. `src/config.ts` maps a domain tone to one of these class names;
+   everything tinted by tone reads --tone rather than naming a colour itself. */
+.tone-ok { --tone: var(--ok); }
+.tone-warn { --tone: var(--warn); }
+.tone-bad { --tone: var(--bad); }
+
 .dash-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-title {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 1px;
+}
+
+.dash-orbit {
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.dash-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .status-pill {
@@ -48,6 +75,10 @@ body {
   font-weight: 700;
   letter-spacing: 2px;
   font-size: 14px;
+  color: var(--tone);
+  border: 1px solid var(--tone);
+  /* 13.333% == the 0x22 alpha the pill was painted with before. */
+  background: color-mix(in srgb, var(--tone) 13.333%, transparent);
 }
 
 .status-dot {
@@ -55,6 +86,7 @@ body {
   height: 10px;
   border-radius: 50%;
   animation: pulse 2s infinite;
+  background: var(--tone);
 }
 
 @keyframes pulse {
@@ -67,11 +99,25 @@ body {
   align-items: center;
   margin-top: 16px;
   padding: 10px 14px;
-  border: 1px solid var(--warn);
+  border: 1px solid var(--tone);
   border-left-width: 4px;
   border-radius: 6px;
   background: #1a1420;
   font-size: 13px;
+}
+
+.alert-banner strong {
+  color: var(--tone);
+}
+
+.alert-detail {
+  margin-left: 10px;
+}
+
+.alert-time {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .alert-flash {
@@ -96,11 +142,8 @@ body {
   border-radius: 10px;
   padding: 14px 16px;
   border-top-width: 3px;
+  border-top-color: var(--tone);
 }
-
-.tile-ok { border-top-color: var(--ok); }
-.tile-warn { border-top-color: var(--warn); }
-.tile-bad { border-top-color: var(--bad); }
 
 .tile-label {
   color: var(--muted);
@@ -113,6 +156,16 @@ body {
 .tile-value {
   font-size: 30px;
   font-weight: 700;
+}
+
+/* A value that is a phrase rather than a reading — a countdown, a shift board —
+   set small enough that the longest one it can print still fits one line. */
+.tile-value-md {
+  font-size: 24px;
+}
+
+.tile-value-sm {
+  font-size: 20px;
 }
 
 .tile-unit {
@@ -141,6 +194,12 @@ body {
 }
 
 .grid > :first-child {
+  grid-column: 1 / -1;
+}
+
+/* The first panel takes a whole row, so an even-numbered last panel is the odd
+   one out of the pairs below it. Widen it rather than leave a dead half-row. */
+.grid > :last-child:nth-child(even) {
   grid-column: 1 / -1;
 }
 
@@ -222,7 +281,8 @@ button {
 }
 
 .crew-list,
-.incident-list {
+.incident-list,
+.fuel-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -250,6 +310,11 @@ button {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--muted);
+}
+
+.crew-dot-on {
+  background: var(--ok);
 }
 
 .crew-main {
@@ -301,6 +366,10 @@ button {
   margin-top: 2px;
 }
 
+.sev-critical { background: var(--bad); }
+.sev-warning { background: var(--warn); }
+.sev-info { background: var(--accent); }
+
 .incident-main {
   display: flex;
   flex-direction: column;
@@ -318,6 +387,70 @@ button {
 .incident-empty {
   color: var(--muted);
   padding: 12px 4px;
+}
+
+.fuel-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.fuel-endurance {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--tone, var(--text));
+}
+
+.fuel-endurance-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.fuel-inputs {
+  margin: 4px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fuel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.fuel-row:last-child {
+  border-bottom: none;
+}
+
+.fuel-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fuel-id {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.fuel-type {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.fuel-mass {
+  color: var(--muted);
+}
+
+.fuel-pct {
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .chart-tabs {
@@ -350,6 +483,14 @@ button {
   border-radius: 6px;
 }
 
+.sparkline-plot {
+  stroke: var(--accent);
+}
+
+.sparkline-plot-breach {
+  stroke: var(--bad);
+}
+
 .chart-stats {
   display: flex;
   gap: 18px;
@@ -368,9 +509,4 @@ button {
   text-align: center;
   color: var(--muted);
   font-size: 11px;
-}
-
-.old-dashboard {
-  padding: 20px;
-  font-family: serif;
 }
