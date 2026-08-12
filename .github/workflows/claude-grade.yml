@@ -72,7 +72,7 @@ jobs:
                containing: a score table per rubric section, the verdict, and the
                top 3 concrete improvements. Use markdown. Be encouraging but honest.
           claude_args: |
-            --model deepseek-reasoner --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr comment:*),Bash(cat:*),Bash(ls:*)"
+            --model deepseek-v4-pro --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr comment:*),Bash(cat:*),Bash(ls:*)"
 
       - name: Set commit status from verdict
         if: steps.key.outputs.present == 'true'
